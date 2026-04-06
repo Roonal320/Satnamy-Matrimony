@@ -67,15 +67,15 @@ const Discover = () => {
       <Header />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Search and Filter Bar */}
-        <div className="mb-8 flex gap-4 items-center">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row gap-3 sm:gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
+            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'var(--text-secondary)' }} />
             <Input
               data-testid="search-input"
-              placeholder="Search by city, education, occupation..."
-              className="pl-12 h-12 font-body"
+              placeholder="Search profiles..."
+              className="pl-10 sm:pl-12 h-11 sm:h-12 font-body text-sm sm:text-base"
               style={{ background: 'var(--surface)' }}
             />
           </div>
@@ -84,10 +84,10 @@ const Discover = () => {
             <SheetTrigger asChild>
               <Button
                 data-testid="filter-button"
-                className="h-12 px-6 rounded-full font-body transition-smooth"
+                className="h-11 sm:h-12 px-4 sm:px-6 rounded-full font-body transition-smooth text-sm sm:text-base w-full sm:w-auto"
                 style={{ background: 'var(--primary)', color: 'white' }}
               >
-                <Filter className="w-5 h-5 mr-2" />
+                <Filter className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Filters
               </Button>
             </SheetTrigger>
@@ -162,16 +162,16 @@ const Discover = () => {
 
         {/* Profile Grid */}
         {loading ? (
-          <div className="text-center py-20">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 mx-auto" style={{ borderColor: 'var(--primary)' }}></div>
-            <p className="mt-4 font-body" style={{ color: 'var(--text-secondary)' }}>Loading profiles...</p>
+          <div className="text-center py-16 sm:py-20">
+            <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-t-4 border-b-4 mx-auto" style={{ borderColor: 'var(--primary)' }}></div>
+            <p className="mt-4 font-body text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>Loading profiles...</p>
           </div>
         ) : profiles.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="font-body text-lg" style={{ color: 'var(--text-secondary)' }}>No profiles found</p>
+          <div className="text-center py-16 sm:py-20">
+            <p className="font-body text-base sm:text-lg" style={{ color: 'var(--text-secondary)' }}>No profiles found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {profiles.map((profile) => (
               <div
                 key={profile.id}
