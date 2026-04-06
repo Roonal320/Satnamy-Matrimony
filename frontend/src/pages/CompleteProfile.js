@@ -102,12 +102,9 @@ const CompleteProfile = () => {
       <div className="max-w-3xl mx-auto">
         <div className="bg-white rounded-2xl p-8 shadow-lg" style={{ border: '1px solid var(--border)' }}>
           <div className="mb-8">
-            <h1 className="font-heading text-4xl font-bold mb-2" style={{ color: '#2E5090' }}>
+            <h1 className="font-heading text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
               Complete Your Profile
             </h1>
-            <p className="font-heading text-lg font-bold mb-3" style={{ color: '#2E5090' }}>
-              जय सतनाम
-            </p>
             <p className="font-body" style={{ color: 'var(--text-secondary)' }}>
               Step {step} of 3: {step === 1 ? 'Personal Details' : step === 2 ? 'Professional Details' : 'About & Family'}
             </p>

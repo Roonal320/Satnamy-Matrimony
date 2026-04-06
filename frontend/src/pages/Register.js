@@ -48,11 +48,11 @@ const Register = () => {
       <div className="w-full max-w-2xl">
         <div className="bg-white rounded-2xl p-8 shadow-lg" style={{ borderColor: 'var(--border)', borderWidth: '1px' }}>
           <div className="text-center mb-8">
-            <h1 className="font-heading text-4xl font-bold mb-2" style={{ color: '#2E5090' }}>
+            <h1 className="font-heading text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
               Join Satnami Matrimony
             </h1>
-            <p className="font-heading text-xl font-bold mb-4" style={{ color: '#2E5090' }}>
-              जय सतनाम
+            <p className="font-body" style={{ color: 'var(--text-secondary)' }}>
+              Begin your journey to find your life partner
             </p>
             <p className="font-body" style={{ color: 'var(--text-secondary)' }}>
               Begin your journey to find your life partner

@@ -80,64 +80,39 @@ const Landing = () => {
 
       {/* Hero Section */}
       <div
-        className="relative py-20 px-4"
+        className="relative py-20 px-4 text-center"
         style={{
-          background: 'linear-gradient(135deg, #E8F0F8 0%, #D4E4F7 50%, #C1D9F5 100%)',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1722952934661-dde241aeb591?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHwzfHxpbmRpYW4lMjB3ZWRkaW5nJTIwY291cGxlfGVufDB8fHx8MTc3NTQ4OTI1Nnww&ixlib=rb-4.1.0&q=85)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            {/* Left: Guru Ghasidas Image */}
-            <div className="flex justify-center lg:justify-end">
-              <div className="relative">
-                <img
-                  src="https://customer-assets.emergentagent.com/job_satnami-unions/artifacts/kszwmy3l_ChatGPT%20Image%20Apr%206%2C%202026%2C%2010_53_26%20PM.png"
-                  alt="Guru Ghasidas Ji - Jai Satnam"
-                  className="w-full max-w-md rounded-3xl shadow-2xl"
-                  style={{ border: '4px solid #2E5090' }}
-                />
-                <div className="absolute -bottom-4 -right-4 bg-white px-6 py-3 rounded-2xl shadow-lg" style={{ border: '2px solid #2E5090' }}>
-                  <p className="font-heading text-2xl font-bold" style={{ color: '#2E5090' }}>
-                    जय सतनाम
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Text Content */}
-            <div className="text-center lg:text-left">
-              <h1
-                className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold mb-4"
-                style={{ color: '#2E5090' }}
-                data-testid="hero-heading"
+        <div className="absolute inset-0 hero-overlay"></div>
+        
+        <div className="relative z-10 max-w-4xl mx-auto">
+          <h1
+            className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-white"
+            data-testid="hero-heading"
+          >
+            Find Your Perfect Match in the Satnami Community
+          </h1>
+          <p className="font-body text-lg text-white/90 mb-8">
+            Join thousands of Satnami community members finding their life partners with Guru Ghasidas Ji's blessings
+          </p>
+          {!user && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                data-testid="hero-register-button"
+                onClick={() => navigate('/register')}
+                className="h-14 px-8 rounded-full font-body font-medium text-white text-lg transition-smooth shadow-lg"
+                style={{ background: 'var(--primary)' }}
+                onMouseEnter={(e) => (e.target.style.background = 'var(--primary-hover)')}
+                onMouseLeave={(e) => (e.target.style.background = 'var(--primary)')}
               >
-                Find Your Perfect Match
-              </h1>
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{ color: 'var(--primary)' }}>
-                in the Satnami Community
-              </h2>
-              <p className="font-heading text-2xl sm:text-3xl font-bold mb-6" style={{ color: '#2E5090' }}>
-                जय सतनाम
-              </p>
-              <p className="font-body text-lg mb-8" style={{ color: 'var(--text-secondary)' }}>
-                Join thousands of Satnami community members finding their life partners with the blessings of Guru Ghasidas Ji
-              </p>
-              {!user && (
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <Button
-                    data-testid="hero-register-button"
-                    onClick={() => navigate('/register')}
-                    className="h-14 px-8 rounded-full font-body font-medium text-white text-lg transition-smooth shadow-lg"
-                    style={{ background: '#2E5090' }}
-                    onMouseEnter={(e) => (e.target.style.background = '#1E3A6F')}
-                    onMouseLeave={(e) => (e.target.style.background = '#2E5090')}
-                  >
-                    Register Free - जय सतनाम
-                  </Button>
-                </div>
-              )}
+                Register Free
+              </Button>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -168,11 +143,8 @@ const Landing = () => {
             </SheetTrigger>
             <SheetContent>
               <SheetHeader>
-                <SheetTitle className="font-heading text-2xl" style={{ color: '#2E5090' }}>
+                <SheetTitle className="font-heading text-2xl" style={{ color: 'var(--text-primary)' }}>
                   Advanced Filters
-                  <div className="font-heading text-lg font-bold mt-3 px-4 py-2 rounded-lg inline-block" style={{ color: '#2E5090', background: '#E8F0F8' }}>
-                    जय सतनाम
-                  </div>
                 </SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-6">
@@ -254,9 +226,9 @@ const Landing = () => {
                   data-testid="apply-filters-button"
                   onClick={applyFilters}
                   className="w-full h-12 rounded-full font-body text-white font-medium shadow-md"
-                  style={{ background: '#2E5090' }}
-                  onMouseEnter={(e) => (e.target.style.background = '#1E3A6F')}
-                  onMouseLeave={(e) => (e.target.style.background = '#2E5090')}
+                  style={{ background: 'var(--primary)' }}
+                  onMouseEnter={(e) => (e.target.style.background = 'var(--primary-hover)')}
+                  onMouseLeave={(e) => (e.target.style.background = 'var(--primary)')}
                 >
                   Apply Filters
                 </Button>
@@ -365,25 +337,22 @@ const Landing = () => {
 
         {/* CTA Section */}
         {!user && profiles.length > 0 && (
-          <div className="mt-16 text-center py-12 px-4 rounded-2xl shadow-lg" style={{ background: 'linear-gradient(135deg, #E8F0F8 0%, #D4E4F7 100%)', border: '2px solid #2E5090' }}>
-            <h3 className="font-heading text-3xl font-bold mb-4" style={{ color: '#2E5090' }}>
+          <div className="mt-16 text-center py-12 px-4 rounded-2xl shadow-md" style={{ background: 'var(--surface-secondary)' }}>
+            <h3 className="font-heading text-3xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
               Ready to Connect?
             </h3>
-            <p className="font-heading text-2xl font-bold mb-6" style={{ color: '#2E5090' }}>
-              जय सतनाम
-            </p>
             <p className="font-body text-lg mb-6" style={{ color: 'var(--text-secondary)' }}>
-              Register now to view full profiles and start your journey with Guru Ghasidas Ji's blessings
+              Register now to view full profiles and start your journey
             </p>
             <Button
               data-testid="cta-register-button"
               onClick={() => navigate('/register')}
               className="h-14 px-8 rounded-full font-body font-medium text-white text-lg transition-smooth shadow-lg"
-              style={{ background: '#2E5090' }}
-              onMouseEnter={(e) => (e.target.style.background = '#1E3A6F')}
-              onMouseLeave={(e) => (e.target.style.background = '#2E5090')}
+              style={{ background: 'var(--primary)' }}
+              onMouseEnter={(e) => (e.target.style.background = 'var(--primary-hover)')}
+              onMouseLeave={(e) => (e.target.style.background = 'var(--primary)')}
             >
-              Register Free - जय सतनाम
+              Register Free
             </Button>
           </div>
         )}
