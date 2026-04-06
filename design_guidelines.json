@@ -1,0 +1,86 @@
+{
+  "theme": "light",
+  "archetype": "1 (Organic & Earthy)",
+  "design_philosophy": "Modern yet rooted in tradition. The UI should evoke trust, warmth, and auspiciousness without looking like a chaotic bulletin board. We use wide padding, large emotive photography, and earthy tones like bone-white and terracotta to build a safe, premium matchmaking environment.",
+  "typography": {
+    "headings": {
+      "font_family": "Cormorant Garamond, serif",
+      "weights": ["400", "600", "700"],
+      "usage_rules": "Use for all major section titles and profile names. Keep tracking tight on large sizes. H1 must not exceed text-5xl."
+    },
+    "body": {
+      "font_family": "Outfit, sans-serif",
+      "weights": ["300", "400", "500", "600"],
+      "usage_rules": "Use for all data points, bios, and UI elements. High legibility is required for dense profile data."
+    }
+  },
+  "color_palette": {
+    "background": "#FDFBF7",
+    "surface": "#FFFFFF",
+    "surface_secondary": "#F5F2EA",
+    "text_primary": "#1F1A17",
+    "text_secondary": "#5C544E",
+    "primary": "#C84B31",
+    "primary_hover": "#A93A21",
+    "secondary": "#D4AF37",
+    "border": "#E6E2D8",
+    "success": "#2D6A4F",
+    "error": "#9B2226",
+    "rules": "Avoid pure black or pure white except for specific isolated cards. Text must have a slight warm tint. Primary terracotta color is strictly for main CTAs (Connect, Subscribe) and active states."
+  },
+  "spacing_and_layout": {
+    "general": "Use generous padding. p-8 or p-12 for main content blocks to create a premium feel.",
+    "grid_strategy": "Use Bento Grid (Tetris Grid) for the profile discovery page. Mix tall cards (portraits) with square cards (quick stats) to break monotony.",
+    "radius": "rounded-2xl for main cards, rounded-full for buttons and avatars to keep the interface soft and approachable.",
+    "header": "Sticky glassmorphism header (backdrop-blur-xl bg-white/80) with 1px border-b border-border."
+  },
+  "components": {
+    "cards": "Flat background with 1px border (#E6E2D8), no heavy drop shadows. On hover, apply a soft ambient shadow and -translate-y-1.",
+    "buttons": "Primary buttons use #C84B31 background with white text. Must include hover states and data-testid.",
+    "forms": "Use Shadcn inputs. Inputs should have generous padding (h-12) and clear focus rings in primary color.",
+    "filters": "Use Shadcn Accordion or Sheet for advanced search filters to save screen space on mobile.",
+    "premium_banner": "Use the luxury silk texture as background, overlay with a warm gradient, and feature gold (#D4AF37) typography/icons."
+  },
+  "motion_and_interaction": {
+    "hover": "All interactive elements must change state visibly (opacity, subtle scale, or color shift).",
+    "transitions": "Use 'transition-all duration-300 ease-in-out'.",
+    "page_load": "Staggered fade-in for profile grids."
+  },
+  "accessibility": {
+    "contrast": "Ensure all text over images uses a dark gradient overlay (bg-gradient-to-t from-black/60 to-transparent) to guarantee readability.",
+    "testing": "All interactive elements (buttons, links, form inputs) MUST have a data-testid attribute in kebab-case (e.g., data-testid='login-button')."
+  },
+  "media": {
+    "hero_background": {
+      "url": "https://images.unsplash.com/photo-1722952934661-dde241aeb591?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHwzfHxpbmRpYW4lMjB3ZWRkaW5nJTIwY291cGxlfGVufDB8fHx8MTc3NTQ4OTI1Nnww&ixlib=rb-4.1.0&q=85",
+      "description": "Happy modern Indian couple in traditional attire, used for the main landing page hero section."
+    },
+    "premium_texture": {
+      "url": "https://images.unsplash.com/photo-1683140426885-6c0ce899409c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBzaWxrJTIwdGV4dHVyZXxlbnwwfHx8fDE3NzU0ODkyNjl8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Luxury white silk texture to be used as a background for Premium Membership tiers or banners."
+    },
+    "placeholder_bride": {
+      "url": "https://images.pexels.com/photos/36102606/pexels-photo-36102606.jpeg",
+      "description": "High-quality portrait of an Indian bride, to be used as a placeholder in the discovery grid."
+    },
+    "placeholder_groom": {
+      "url": "https://images.unsplash.com/photo-1759906693830-a2449013bd94?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwyfHxpbmRpYW4lMjBncm9vbSUyMHBvcnRyYWl0fGVufDB8fHx8MTc3NTQ4OTI2OXww&ixlib=rb-4.1.0&q=85",
+      "description": "High-quality portrait of an Indian groom, to be used as a placeholder in the discovery grid."
+    },
+    "cultural_background": {
+      "url": "https://images.pexels.com/photos/36558486/pexels-photo-36558486.jpeg",
+      "description": "Indian temple architecture, suitable for the 'About Community' or 'Success Stories' section background with an overlay."
+    }
+  },
+  "instructions_to_main_agent": [
+    "Install required fonts: Cormorant Garamond and Outfit from Google Fonts.",
+    "Configure tailwind.config.js with the provided color_palette and font families.",
+    "Do NOT use generic blue or purple. Stick strictly to the Terracotta (#C84B31) and Gold (#D4AF37) accents against the Bone White (#FDFBF7) background.",
+    "Implement the landing page hero with `hero_background`. Apply a bg-black/40 overlay to ensure text contrast.",
+    "Build a robust, multi-step registration form using Shadcn components (Inputs, Selects, DatePicker).",
+    "Create a 'Discovery' page using a Bento grid layout for profile cards. Use the provided placeholder images.",
+    "Implement advanced filters using a collapsible Shadcn Sheet or Accordion on mobile, and a sticky sidebar on desktop.",
+    "Add a 'Premium Membership' section utilizing the `premium_texture` background image.",
+    "Ensure every single button, input, and interactive card has a distinct `data-testid`."
+  ]
+}
