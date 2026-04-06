@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Header from '../components/Header';
 import { Button } from '../components/ui/button';
 import axios from 'axios';
 import { MapPin, Briefcase, GraduationCap, Heart, MessageCircle, ArrowLeft, Phone, User as UserIcon, Users } from 'lucide-react';
@@ -74,6 +75,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
+      <Header />
       <div className="max-w-6xl mx-auto px-4 py-8">
         <Button
           data-testid="back-button"

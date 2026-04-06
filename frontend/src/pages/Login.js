@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Header from '../components/Header';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -30,17 +31,22 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--background)' }}>
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl p-8 shadow-lg" style={{ borderColor: 'var(--border)', borderWidth: '1px' }}>
-          <div className="text-center mb-8">
-            <h1 className="font-heading text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-              Welcome Back
-            </h1>
-            <p className="font-body" style={{ color: 'var(--text-secondary)' }}>
-              Sign in to find your perfect match
-            </p>
-          </div>
+    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
+      <Header />
+      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl p-8 shadow-lg" style={{ borderColor: 'var(--border)', borderWidth: '1px' }}>
+            <div className="text-center mb-8">
+              <h1 className="font-heading text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                Welcome Back
+              </h1>
+              <p className="font-heading text-lg font-semibold mb-2" style={{ color: 'var(--secondary)' }}>
+                जय सतनाम
+              </p>
+              <p className="font-body" style={{ color: 'var(--text-secondary)' }}>
+                Sign in to find your perfect match
+              </p>
+            </div>
 
           {error && (
             <div className="mb-6 p-4 rounded-lg flex items-start gap-3" style={{ background: 'var(--surface-secondary)', borderLeft: '4px solid var(--error)' }}>
@@ -100,6 +106,7 @@ const Login = () => {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

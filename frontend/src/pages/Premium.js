@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Header from '../components/Header';
 import { Button } from '../components/ui/button';
 import axios from 'axios';
 import { Crown, Check, ArrowLeft, Sparkles } from 'lucide-react';
@@ -110,13 +111,17 @@ const Premium = () => {
 
   return (
     <div
-      className="min-h-screen py-12 px-4"
-      style={{
-        backgroundImage: 'url(https://images.unsplash.com/photo-1683140426885-6c0ce899409c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBzaWxrJTIwdGV4dHVyZXxlbnwwfHx8fDE3NzU0ODkyNjl8MA&ixlib=rb-4.1.0&q=85)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
+      className="min-h-screen"
+      style={{ background: 'var(--background)' }}
     >
+      <Header />
+      <div className="py-12 px-4"
+        style={{
+          backgroundImage: 'url(https://images.unsplash.com/photo-1683140426885-6c0ce899409c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBzaWxrJTIwdGV4dHVyZXxlbnwwfHx8fDE3NzU0ODkyNjl8MA&ixlib=rb-4.1.0&q=85)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
       <div className="absolute inset-0" style={{ background: 'rgba(253, 251, 247, 0.95)' }}></div>
 
       <div className="relative max-w-7xl mx-auto">
@@ -139,6 +144,9 @@ const Premium = () => {
           <h1 className="font-heading text-5xl sm:text-6xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
             Upgrade to Premium
           </h1>
+          <p className="font-heading text-2xl font-semibold mb-4" style={{ color: 'var(--secondary)' }}>
+            जय सतनाम
+          </p>
           <p className="font-body text-lg" style={{ color: 'var(--text-secondary)' }}>
             Get noticed by more matches and find your perfect partner faster
           </p>
@@ -239,6 +247,7 @@ const Premium = () => {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

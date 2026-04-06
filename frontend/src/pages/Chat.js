@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Header from '../components/Header';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { ScrollArea } from '../components/ui/scroll-area';
@@ -84,6 +85,7 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
+      <Header />
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Button
           data-testid="back-button"

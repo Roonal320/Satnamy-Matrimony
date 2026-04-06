@@ -315,29 +315,35 @@ async def get_file(path: str, request: Request, auth: str = Query(None)):
 
 @api_router.get("/profiles")
 async def search_profiles(request: Request, skip: int = 0, limit: int = 20):
-    user = await get_current_user(request)
+    # Allow public access - no auth required
+    try:
+        user = await get_current_user(request)
+        query = {
+            "id": {"$ne": user["id"]},
+            "profile_completed": True
+        }
+        # Show opposite gender by default for logged-in users
+        if user.get("gender"):
+            opposite_gender = "Female" if user["gender"] == "Male" else "Male"
+            query["gender"] = opposite_gender
+    except:
+        # Not logged in - show all profiles
+        query = {"profile_completed": True}
     
-    query = {
-        "id": {"$ne": user["id"]},
-        "profile_completed": True
-    }
-    
-    # Show opposite gender by default
-    if user.get("gender"):
-        opposite_gender = "Female" if user["gender"] == "Male" else "Male"
-        query["gender"] = opposite_gender
-    
-    profiles = await db.users.find(query, {"_id": 0, "password_hash": 0}).skip(skip).limit(limit).to_list(limit)
+    profiles = await db.users.find(query, {"_id": 0, "password_hash": 0, "email": 0, "phone": 0}).skip(skip).limit(limit).to_list(limit)
     return profiles
 
 @api_router.post("/profiles/search")
 async def advanced_search(request: Request, filters: SearchFilters, skip: int = 0, limit: int = 20):
-    user = await get_current_user(request)
+    # Allow public access
+    query = {"profile_completed": True}
     
-    query = {
-        "id": {"$ne": user["id"]},
-        "profile_completed": True
-    }
+    # Exclude current user if logged in
+    try:
+        user = await get_current_user(request)
+        query["id"] = {"$ne": user["id"]}
+    except:
+        pass  # Not logged in, show all
     
     if filters.gender:
         query["gender"] = filters.gender

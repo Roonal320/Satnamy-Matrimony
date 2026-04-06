@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Header from '../components/Header';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
 import axios from 'axios';
-import { Search, Filter, MapPin, Briefcase, GraduationCap, Crown, LogOut, MessageCircle, User } from 'lucide-react';
+import { Search, Filter, MapPin, Briefcase, GraduationCap, Crown } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const Discover = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,54 +64,7 @@ const Discover = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-50 backdrop-blur-xl"
-        style={{ background: 'rgba(255, 255, 255, 0.8)', borderBottom: '1px solid var(--border)' }}
-      >
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="font-heading text-3xl font-bold" style={{ color: 'var(--primary)' }}>
-              Satnami Matrimony
-            </h1>
-
-            <div className="flex items-center gap-4">
-              <Button
-                data-testid="nav-messages-button"
-                onClick={() => navigate('/chat')}
-                variant="ghost"
-                className="transition-smooth"
-              >
-                <MessageCircle className="w-5 h-5" />
-              </Button>
-              <Button
-                data-testid="nav-premium-button"
-                onClick={() => navigate('/premium')}
-                variant="ghost"
-                className="transition-smooth"
-              >
-                <Crown className="w-5 h-5" style={{ color: 'var(--secondary)' }} />
-              </Button>
-              <Button
-                data-testid="nav-profile-button"
-                onClick={() => navigate(`/profile/${user?.id}`)}
-                variant="ghost"
-                className="transition-smooth"
-              >
-                <User className="w-5 h-5" />
-              </Button>
-              <Button
-                data-testid="nav-logout-button"
-                onClick={logout}
-                variant="ghost"
-                className="transition-smooth"
-              >
-                <LogOut className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -139,7 +93,12 @@ const Discover = () => {
             </SheetTrigger>
             <SheetContent>
               <SheetHeader>
-                <SheetTitle className="font-heading text-2xl">Advanced Filters</SheetTitle>
+                <SheetTitle className="font-heading text-2xl">
+                  Advanced Filters
+                  <div className="font-heading text-base font-semibold mt-2" style={{ color: 'var(--secondary)' }}>
+                    जय सतनाम
+                  </div>
+                </SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-6">
                 <div>
