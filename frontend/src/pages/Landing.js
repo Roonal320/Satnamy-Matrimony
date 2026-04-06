@@ -80,23 +80,25 @@ const Landing = () => {
 
       {/* Hero Section */}
       <div
-        className="relative py-12 sm:py-16 md:py-20 px-4 text-center"
+        className="relative py-12 sm:py-16 md:py-24 lg:py-32 px-4 text-center overflow-hidden"
         style={{
           backgroundImage: 'url(https://images.unsplash.com/photo-1722952934661-dde241aeb591?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHwzfHxpbmRpYW4lMjB3ZWRkaW5nJTIwY291cGxlfGVufDB8fHx8MTc3NTQ4OTI1Nnww&ixlib=rb-4.1.0&q=85)',
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'center center',
+          backgroundRepeat: 'no-repeat',
+          minHeight: '500px',
         }}
       >
-        <div className="absolute inset-0 hero-overlay"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30"></div>
         
-        <div className="relative z-10 max-w-4xl mx-auto px-2 sm:px-4">
+        <div className="relative z-10 max-w-4xl mx-auto px-2 sm:px-4 flex flex-col justify-center" style={{ minHeight: '400px' }}>
           <h1
-            className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight"
+            className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight drop-shadow-lg"
             data-testid="hero-heading"
           >
             Find Your Perfect Match in the Satnami Community
           </h1>
-          <p className="font-body text-base sm:text-lg text-white/90 mb-6 sm:mb-8 px-2">
+          <p className="font-body text-base sm:text-lg md:text-xl text-white/95 mb-6 sm:mb-8 px-2 drop-shadow-md max-w-3xl mx-auto">
             Join thousands of Satnami community members finding their life partners with Guru Ghasidas Ji's blessings
           </p>
           {!user && (
@@ -104,7 +106,7 @@ const Landing = () => {
               <Button
                 data-testid="hero-register-button"
                 onClick={() => navigate('/register')}
-                className="h-12 sm:h-14 px-6 sm:px-8 rounded-full font-body font-medium text-white text-base sm:text-lg transition-smooth shadow-lg w-full sm:w-auto"
+                className="h-12 sm:h-14 px-6 sm:px-8 rounded-full font-body font-medium text-white text-base sm:text-lg transition-smooth shadow-lg w-full sm:w-auto hover:scale-105"
                 style={{ background: 'var(--primary)' }}
                 onMouseEnter={(e) => (e.target.style.background = 'var(--primary-hover)')}
                 onMouseLeave={(e) => (e.target.style.background = 'var(--primary)')}
