@@ -93,9 +93,9 @@ const Discover = () => {
             </SheetTrigger>
             <SheetContent>
               <SheetHeader>
-                <SheetTitle className="font-heading text-2xl">
+                <SheetTitle className="font-heading text-2xl" style={{ color: '#2E5090' }}>
                   Advanced Filters
-                  <div className="font-heading text-base font-semibold mt-2" style={{ color: 'var(--secondary)' }}>
+                  <div className="font-heading text-lg font-bold mt-3 px-4 py-2 rounded-lg inline-block" style={{ color: '#2E5090', background: '#E8F0F8' }}>
                     जय सतनाम
                   </div>
                 </SheetTitle>

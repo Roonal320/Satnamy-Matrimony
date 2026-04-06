@@ -141,10 +141,10 @@ const Premium = () => {
             <Crown className="w-12 h-12" />
             <Sparkles className="w-8 h-8" />
           </div>
-          <h1 className="font-heading text-5xl sm:text-6xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="font-heading text-5xl sm:text-6xl font-bold mb-4" style={{ color: '#2E5090' }}>
             Upgrade to Premium
           </h1>
-          <p className="font-heading text-2xl font-semibold mb-4" style={{ color: 'var(--secondary)' }}>
+          <p className="font-heading text-2xl font-bold mb-6" style={{ color: '#2E5090' }}>
             जय सतनाम
           </p>
           <p className="font-body text-lg" style={{ color: 'var(--text-secondary)' }}>
