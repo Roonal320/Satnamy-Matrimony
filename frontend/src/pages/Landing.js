@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -84,12 +85,12 @@ const Landing = () => {
         style={{
           backgroundImage: 'url(https://images.unsplash.com/photo-1722952934661-dde241aeb591?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHwzfHxpbmRpYW4lMjB3ZWRkaW5nJTIwY291cGxlfGVufDB8fHx8MTc3NTQ4OTI1Nnww&ixlib=rb-4.1.0&q=85)',
           backgroundSize: 'cover',
-          backgroundPosition: 'center center',
+          backgroundPosition: 'center 40%',
           backgroundRepeat: 'no-repeat',
           minHeight: '500px',
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20"></div>
         
         <div className="relative z-10 max-w-4xl mx-auto px-2 sm:px-4 flex flex-col justify-center" style={{ minHeight: '400px' }}>
           <h1
@@ -359,6 +360,7 @@ const Landing = () => {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 };

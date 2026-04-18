@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import axios from 'axios';
 import { Crown, Check, ArrowLeft, Sparkles } from 'lucide-react';
@@ -246,6 +247,7 @@ const Premium = () => {
         )}
       </div>
       </div>
+      <Footer />
     </div>
   );
 };
