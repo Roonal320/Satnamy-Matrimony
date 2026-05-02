@@ -19,8 +19,21 @@ load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
+import certifi
+
+# Connect to MongoDB - try Atlas, fallback to local
+try:
+    if 'mongodb+srv' in mongo_url:
+        client = AsyncIOMotorClient(mongo_url, tls=True, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=5000)
+    else:
+        client = AsyncIOMotorClient(mongo_url)
+except Exception:
+    client = AsyncIOMotorClient("mongodb://localhost:27017")
 db = client[os.environ['DB_NAME']]
+
+# Also keep local connection as fallback for operations
+local_client = AsyncIOMotorClient("mongodb://localhost:27017")
+local_db = local_client[os.environ['DB_NAME']]
 
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET']
@@ -451,9 +464,29 @@ async def get_conversations(request: Request):
     return conversations
 
 # ============ Premium Routes ============
+PLANS = {
+    "gold_3": {"name": "Gold", "months": 3, "amount": 149900, "features": ["unlimited_messaging", "view_contacts", "profile_boost"]},
+    "gold_6": {"name": "Gold", "months": 6, "amount": 249900, "features": ["unlimited_messaging", "view_contacts", "profile_boost"]},
+    "gold_12": {"name": "Gold", "months": 12, "amount": 399900, "features": ["unlimited_messaging", "view_contacts", "profile_boost"]},
+    "diamond_3": {"name": "Diamond", "months": 3, "amount": 299900, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight"]},
+    "diamond_6": {"name": "Diamond", "months": 6, "amount": 499900, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight"]},
+    "diamond_12": {"name": "Diamond", "months": 12, "amount": 799900, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight"]},
+    "platinum_3": {"name": "Platinum", "months": 3, "amount": 499900, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight", "personal_matchmaker", "priority_support"]},
+    "platinum_6": {"name": "Platinum", "months": 6, "amount": 799900, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight", "personal_matchmaker", "priority_support"]},
+    "platinum_12": {"name": "Platinum", "months": 12, "amount": 1299900, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight", "personal_matchmaker", "priority_support"]},
+}
+
+@api_router.get("/plans")
+async def get_plans():
+    return PLANS
+
 @api_router.post("/premium/create-order")
 async def create_premium_order(request: Request, data: OrderCreate):
     user = await get_current_user(request)
+    
+    plan_info = PLANS.get(data.plan)
+    if not plan_info:
+        raise HTTPException(status_code=400, detail="Invalid plan")
     
     try:
         razor_order = razorpay_client.order.create({
@@ -467,6 +500,8 @@ async def create_premium_order(request: Request, data: OrderCreate):
             "user_id": user["id"],
             "order_id": razor_order["id"],
             "plan": data.plan,
+            "plan_name": plan_info["name"],
+            "months": plan_info["months"],
             "amount": data.amount,
             "status": "created",
             "created_at": datetime.now(timezone.utc).isoformat()
@@ -485,6 +520,9 @@ async def verify_payment(request: Request, payment_id: str, order_id: str, signa
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
+    plan_info = PLANS.get(order["plan"], {})
+    months = plan_info.get("months", 3)
+    
     # Update order status
     await db.orders.update_one(
         {"order_id": order_id},
@@ -492,10 +530,16 @@ async def verify_payment(request: Request, payment_id: str, order_id: str, signa
     )
     
     # Update user premium status
-    premium_until = datetime.now(timezone.utc) + timedelta(days=30 if order["plan"] == "monthly" else 365)
+    premium_until = datetime.now(timezone.utc) + timedelta(days=30 * months)
     await db.users.update_one(
         {"id": user["id"]},
-        {"$set": {"is_premium": True, "premium_until": premium_until.isoformat()}}
+        {"$set": {
+            "is_premium": True,
+            "premium_plan": order["plan"],
+            "premium_name": plan_info.get("name", "Gold"),
+            "premium_features": plan_info.get("features", []),
+            "premium_until": premium_until.isoformat()
+        }}
     )
     
     return {"message": "Premium activated successfully", "premium_until": premium_until.isoformat()}
@@ -503,10 +547,19 @@ async def verify_payment(request: Request, payment_id: str, order_id: str, signa
 # ============ Startup Events ============
 @app.on_event("startup")
 async def startup():
+    global db
     try:
         # Initialize storage
         init_storage()
         logger.info("Storage initialized")
+        
+        # Test MongoDB connection - fall back to local if Atlas fails
+        try:
+            await db.command("ping")
+            logger.info("Connected to MongoDB Atlas")
+        except Exception as atlas_err:
+            logger.warning(f"Atlas connection failed: {atlas_err}. Falling back to local MongoDB.")
+            db = local_db
         
         # Create indexes
         await db.users.create_index("email", unique=True)
