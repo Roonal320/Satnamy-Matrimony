@@ -45,8 +45,15 @@ EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
 APP_NAME = "satnami-matrimony"
 storage_key = None
 
-# Razorpay Configuration
+# Razorpay Configuration (legacy)
 razorpay_client = razorpay.Client(auth=(os.environ.get('RAZORPAY_KEY_ID', ''), os.environ.get('RAZORPAY_KEY_SECRET', '')))
+
+# DodoPay Configuration
+DODO_API_KEY = os.environ.get('DODO_PAYMENTS_API_KEY', '')
+DODO_MODE = os.environ.get('DODO_MODE', 'test_mode')
+dodo_client = None
+if DODO_API_KEY:
+    dodo_client = dodopayments.DodoPayments(bearer_token=DODO_API_KEY, environment=DODO_MODE)
 
 # Create the main app
 app = FastAPI()
