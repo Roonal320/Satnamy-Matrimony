@@ -109,13 +109,18 @@ const Landing = () => {
     return age;
   };
 
-  const getImageUrl = (path) => {
-    if (!path) return 'https://via.placeholder.com/400x500?text=No+Photo';
+  const getImageUrl = (photoPath) => {
+    if (!photoPath) return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Crect width='400' height='500' fill='%23f0e8f0'/%3E%3Ccircle cx='200' cy='180' r='80' fill='%23c9a0c9'/%3E%3Cellipse cx='200' cy='420' rx='130' ry='110' fill='%23c9a0c9'/%3E%3Ctext x='200' y='490' font-family='Arial' font-size='22' fill='%23888' text-anchor='middle'%3ENo Photo%3C/text%3E%3C/svg%3E`;
+    // New uploads: full S3 URL stored directly in DB
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+      return photoPath;
+    }
+    // Legacy: local path — serve via /api/files proxy
     if (user) {
       const token = document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
-      return `${API}/files/${path}?auth=${token}`;
+      return `${API}/files/${photoPath}?auth=${token}`;
     }
-    return 'https://via.placeholder.com/400x500?text=Profile+Photo';
+    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Crect width='400' height='500' fill='%23f0e8f0'/%3E%3Ccircle cx='200' cy='180' r='80' fill='%23c9a0c9'/%3E%3Cellipse cx='200' cy='420' rx='130' ry='110' fill='%23c9a0c9'/%3E%3Ctext x='200' y='490' font-family='Arial' font-size='22' fill='%23888' text-anchor='middle'%3EProfile Photo%3C/text%3E%3C/svg%3E`;
   };
 
   const handleProfileClick = (profileId) => {

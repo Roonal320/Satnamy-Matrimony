@@ -80,10 +80,15 @@ const Chat = () => {
     }
   };
 
-  const getImageUrl = (path) => {
-    if (!path) return 'https://via.placeholder.com/100?text=No+Photo';
+  const getImageUrl = (photoPath) => {
+    if (!photoPath) return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f0e8f0'/%3E%3Ccircle cx='50' cy='38' r='22' fill='%23c9a0c9'/%3E%3Cellipse cx='50' cy='90' rx='32' ry='28' fill='%23c9a0c9'/%3E%3C/svg%3E`;
+    // New uploads: full S3 URL stored directly in DB
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+      return photoPath;
+    }
+    // Legacy: local path — serve via /api/files proxy
     const token = document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
-    return `${API}/files/${path}?auth=${token}`;
+    return `${API}/files/${photoPath}?auth=${token}`;
   };
 
   return (

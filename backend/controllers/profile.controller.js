@@ -4,6 +4,7 @@ const profileService = require('../services/profile.service');
 const authService = require('../services/auth.service');
 const path = require('path');
 const fs = require('fs');
+const { getS3Url } = require('../config/s3');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
@@ -45,6 +46,9 @@ async function updateProfile(req, res) {
 
 /**
  * Handle user profile image uploads.
+ * Files are stored in AWS S3 via multer-s3.
+ * req.file.location  — the public S3 URL (set automatically by multer-s3)
+ * req.file.key       — the S3 object key (e.g. profiles/{userId}/{uuid}.jpg)
  */
 async function uploadPhoto(req, res) {
   try {
@@ -52,12 +56,15 @@ async function uploadPhoto(req, res) {
       return res.status(400).json({ detail: "No file uploaded" });
     }
 
-    const relativePath = `satnami-matrimony/profiles/${req.user.id}/${req.file.filename}`;
-    await User.updateOne({ id: req.user.id }, { $set: { profile_photo: relativePath } });
+    // multer-s3 sets req.file.location to the full public S3 URL
+    const photoUrl = req.file.location || getS3Url(req.file.key);
+
+    await User.updateOne({ id: req.user.id }, { $set: { profile_photo: photoUrl } });
 
     return res.status(200).json({
-      path: relativePath,
-      message: "Photo uploaded successfully"
+      url: photoUrl,
+      key: req.file.key,
+      message: "Photo uploaded successfully to S3"
     });
   } catch (err) {
     console.error(err);
@@ -66,7 +73,8 @@ async function uploadPhoto(req, res) {
 }
 
 /**
- * Securely serve uploaded files.
+ * Securely serve uploaded files (local disk — kept for backward compatibility).
+ * New uploads go directly to S3 and are served via public S3 URLs.
  */
 async function getFile(req, res) {
   const filePath = req.params[0];

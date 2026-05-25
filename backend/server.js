@@ -1,14 +1,15 @@
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Load environment variables FIRST — before any other module reads process.env
+dotenv.config({ path: path.join(__dirname, '.env') });
+
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const mongoose = require('mongoose');
-const path = require('path');
 const { connectDb } = require('./config/db');
 const apiRouter = require('./routes/index');
-
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '.env') });
 
 const PORT = process.env.PORT || 8000;
 
@@ -41,7 +42,7 @@ app.use('/api', apiRouter);
 app.get('/', (req, res) => {
   return res.status(200).json({
     status: "running",
-    service: "Satnamy Matrimony Backend API",
+    service: "Satnami Matrimony Backend API",
     version: "1.0.0"
   });
 });

@@ -1,12 +1,29 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from './ui/dialog';
-import { Heart, Mail, Phone, MapPin } from 'lucide-react';
+import { Heart, Mail, Phone, MapPin, Building2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const Footer = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  const quickLinks = [
+    { label: t('header.home'), path: '/' },
+    { label: t('footer.search_profiles'), path: '/?tab=discover' },
+    { label: t('footer.premium_plans'), path: '/premium' },
+    { label: t('header.register'), path: '/register' },
+    { label: t('header.sign_in'), path: '/login' },
+  ];
+
+  const legalLinks = [
+    { label: 'About Us', path: '/about' },
+    { label: 'Contact Us', path: '/contact' },
+    { label: 'Privacy Policy', path: '/privacy-policy' },
+    { label: 'Return & Refund Policy', path: '/refund-policy' },
+    { label: 'Cancellation Policy', path: '/cancellation-policy' },
+    { label: 'Shipping Policy', path: '/shipping-policy' },
+  ];
 
   return (
     <footer style={{ background: '#1F1A17', color: '#E6E2D8' }}>
@@ -40,28 +57,49 @@ const Footer = () => {
                 <p className="font-body text-xs" style={{ color: '#A09890' }}>{t('header.brand_slogan')}</p>
               </div>
             </div>
-            <p className="font-body text-sm leading-relaxed" style={{ color: '#A09890' }}>
+            <p className="font-body text-sm leading-relaxed mb-4" style={{ color: '#A09890' }}>
               {t('footer.brand_description')}
             </p>
+            {/* Legal Entity */}
+            <div className="flex items-start gap-2 mt-4">
+              <Building2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#A09890' }} />
+              <p className="font-body text-xs leading-relaxed" style={{ color: '#706860' }}>
+                This website is operated by<br />
+                <span style={{ color: '#A09890' }}>Roonal Khandelwal</span>
+              </p>
+            </div>
           </div>
 
           {/* Quick Links */}
           <div>
             <h4 className="font-heading text-lg font-semibold text-white mb-4">{t('footer.quick_links')}</h4>
             <ul className="space-y-3">
-              {[
-                { label: t('header.home'), path: '/' },
-                { label: t('footer.search_profiles'), path: '/?tab=discover' },
-                { label: t('footer.premium_plans'), path: '/premium' },
-                { label: t('header.register'), path: '/register' },
-                { label: t('header.sign_in'), path: '/login' },
-              ].map((link) => (
+              {quickLinks.map((link) => (
                 <li key={link.path}>
                   <span
                     onClick={() => navigate(link.path)}
                     className="font-body text-sm cursor-pointer transition-all duration-200 hover:text-white"
                     style={{ color: '#A09890' }}
-                    data-testid={`footer-link-${link.label.toLowerCase().replace(' ', '-')}`}
+                    data-testid={`footer-link-${link.label.toLowerCase().replace(/ /g, '-')}`}
+                  >
+                    {link.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal & Policies */}
+          <div>
+            <h4 className="font-heading text-lg font-semibold text-white mb-4">Legal & Policies</h4>
+            <ul className="space-y-3">
+              {legalLinks.map((link) => (
+                <li key={link.path}>
+                  <span
+                    onClick={() => navigate(link.path)}
+                    className="font-body text-sm cursor-pointer transition-all duration-200 hover:text-white"
+                    style={{ color: '#A09890' }}
+                    data-testid={`footer-link-${link.label.toLowerCase().replace(/ /g, '-').replace(/&/g, 'and')}`}
                   >
                     {link.label}
                   </span>
@@ -76,59 +114,50 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--primary)' }} />
-                <span className="font-body text-sm" style={{ color: '#A09890' }}>
-                  support@satnamimatrimony.com
-                </span>
+                <a href="mailto:satnamishaadiii@gmail.com" className="font-body text-sm transition-colors hover:text-white" style={{ color: '#A09890' }}>
+                  satnamishaadiii@gmail.com
+                </a>
               </li>
               <li className="flex items-start gap-3">
                 <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--primary)' }} />
-                <span className="font-body text-sm" style={{ color: '#A09890' }}>
+                <a href="tel:+919131261834" className="font-body text-sm transition-colors hover:text-white" style={{ color: '#A09890' }}>
                   +91 9131261834
-                </span>
+                </a>
               </li>
               <li className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--primary)' }} />
-                <span className="font-body text-sm" style={{ color: '#A09890' }}>
-                  Raipur, Chhattisgarh, India
+                <span className="font-body text-sm leading-relaxed" style={{ color: '#A09890' }}>
+                  10/1143 Shivanand Nagar Sec-1,<br />
+                  Khamtarai, Raipur,<br />
+                  Chhattisgarh – 492008
                 </span>
               </li>
-            </ul>
-          </div>
-
-          {/* About */}
-          <div>
-            <h4 className="font-heading text-lg font-semibold text-white mb-4">{t('footer.about')}</h4>
-            <ul className="space-y-3">
-              {[
-                t('footer.about_us'),
-                t('footer.privacy_policy'),
-                t('footer.terms'),
-                t('footer.help'),
-                t('footer.faq')
-              ].map((item) => (
-                <li key={item}>
-                  <span
-                    className="font-body text-sm cursor-pointer transition-all duration-200 hover:text-white"
-                    style={{ color: '#A09890' }}
-                    data-testid={`footer-link-${item.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    {item}
-                  </span>
-                </li>
-              ))}
             </ul>
           </div>
         </div>
 
-        {/* Divider */}
+        {/* Divider & Bottom */}
         <div className="mt-10 sm:mt-12 pt-6 sm:pt-8" style={{ borderTop: '1px solid #3A3530' }}>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="font-body text-xs sm:text-sm text-center sm:text-left" style={{ color: '#A09890' }}>
-              &copy; {new Date().getFullYear()} {t('footer.rights_reserved')}
+              &copy; {new Date().getFullYear()} Satnami Shaadi — Operated by Roonal Khandelwal. All rights reserved.
             </p>
             <div className="flex items-center gap-1 font-body text-xs sm:text-sm" style={{ color: '#A09890' }}>
               {t('footer.made_with')} <Heart className="w-3 h-3 mx-1" style={{ color: 'var(--primary)' }} fill="var(--primary)" /> {t('footer.for_community')}
             </div>
+          </div>
+          {/* Policy Links Row */}
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 justify-center sm:justify-start">
+            {legalLinks.slice(2).map((link) => (
+              <span
+                key={link.path}
+                onClick={() => navigate(link.path)}
+                className="font-body text-xs cursor-pointer hover:text-white transition-colors"
+                style={{ color: '#706860' }}
+              >
+                {link.label}
+              </span>
+            ))}
           </div>
         </div>
       </div>

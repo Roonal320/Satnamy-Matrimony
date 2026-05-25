@@ -5,7 +5,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import axios from 'axios';
-import { MapPin, Briefcase, GraduationCap, Heart, MessageCircle, ArrowLeft, Phone, User as UserIcon, Users, Lock, Crown } from 'lucide-react';
+import { MapPin, Briefcase, GraduationCap, Heart, MessageCircle, ArrowLeft, Phone, User as UserIcon, Users, Lock, Crown, Camera } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -13,11 +13,12 @@ const API = `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')}/ap
 
 const Profile = () => {
   const { userId } = useParams();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -45,14 +46,44 @@ const Profile = () => {
     return age;
   };
 
-  const getImageUrl = (path) => {
-    if (!path) return 'https://via.placeholder.com/600x800?text=No+Photo';
+  const getImageUrl = (photoPath) => {
+    if (!photoPath) return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='800' viewBox='0 0 600 800'%3E%3Crect width='600' height='800' fill='%23f0e8f0'/%3E%3Ccircle cx='300' cy='280' r='110' fill='%23c9a0c9'/%3E%3Cellipse cx='300' cy='620' rx='180' ry='150' fill='%23c9a0c9'/%3E%3Ctext x='300' y='760' font-family='Arial' font-size='28' fill='%23888' text-anchor='middle'%3ENo Photo%3C/text%3E%3C/svg%3E`;
+    // New uploads: full S3 URL stored directly in DB
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+      return photoPath;
+    }
+    // Legacy: local path — serve via /api/files proxy
     const token = document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
-    return `${API}/files/${path}?auth=${token}`;
+    return `${API}/files/${photoPath}?auth=${token}`;
   };
 
   const handleSendMessage = () => {
     navigate(`/chat?user=${userId}`);
+  };
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const { data } = await axios.post(`${API}/profile/photo`, formData, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      // Update local profile state with new S3 URL
+      setProfile((prev) => ({ ...prev, profile_photo: data.url }));
+      if (updateUser) updateUser({ ...user, profile_photo: data.url });
+      toast.success('Photo updated successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Photo upload failed. Please try again.');
+    } finally {
+      setUploadingPhoto(false);
+      // Reset input so same file can be re-selected
+      e.target.value = '';
+    }
   };
 
   if (loading) {
@@ -100,6 +131,37 @@ const Profile = () => {
                   alt={profile.name}
                   className={`w-full h-full object-cover transition-all duration-300 ${!isOwnProfile && !user?.is_premium ? 'blur-md select-none scale-105' : ''}`}
                 />
+
+                {/* Photo upload overlay — visible only on own profile */}
+                {isOwnProfile && (
+                  <>
+                    <input
+                      id="profile-photo-input"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handlePhotoChange}
+                    />
+                    <label
+                      htmlFor="profile-photo-input"
+                      className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity duration-300"
+                      style={{ background: 'rgba(0,0,0,0.55)' }}
+                    >
+                      {uploadingPhoto ? (
+                        <>
+                          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white mb-2" />
+                          <span className="font-body text-white text-sm">Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="w-10 h-10 text-white mb-2" />
+                          <span className="font-body text-white text-sm font-medium">Change Photo</span>
+                        </>
+                      )}
+                    </label>
+                  </>
+                )}
+
                 {!isOwnProfile && !user?.is_premium && (
                   <div className="absolute inset-0 bg-black/40 backdrop-blur-xs flex flex-col items-center justify-center text-center p-4">
                     <Crown className="w-10 h-10 text-yellow-400 mb-2 animate-bounce" />
