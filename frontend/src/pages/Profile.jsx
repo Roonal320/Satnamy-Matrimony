@@ -130,6 +130,10 @@ const Profile = () => {
                   src={getImageUrl(profile.profile_photo)}
                   alt={profile.name}
                   className={`w-full h-full object-cover transition-all duration-300 ${!isOwnProfile && !user?.is_premium ? 'blur-md select-none scale-105' : ''}`}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='800' viewBox='0 0 600 800'%3E%3Crect width='600' height='800' fill='%23f0e8f0'/%3E%3Ccircle cx='300' cy='280' r='110' fill='%23c9a0c9'/%3E%3Cellipse cx='300' cy='620' rx='180' ry='150' fill='%23c9a0c9'/%3E%3Ctext x='300' y='760' font-family='Arial' font-size='28' fill='%23888' text-anchor='middle'%3ENo Photo%3C/text%3E%3C/svg%3E`;
+                  }}
                 />
 
                 {/* Photo upload overlay — visible only on own profile */}

@@ -376,6 +376,10 @@ const Landing = () => {
                         alt={profile.name}
                         className="w-full h-full object-cover"
                         style={!user ? { filter: 'blur(20px)' } : {}}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Crect width='400' height='500' fill='%23f0e8f0'/%3E%3Ccircle cx='200' cy='180' r='80' fill='%23c9a0c9'/%3E%3Cellipse cx='200' cy='420' rx='130' ry='110' fill='%23c9a0c9'/%3E%3Ctext x='200' y='490' font-family='Arial' font-size='22' fill='%23888' text-anchor='middle'%3ENo Photo%3C/text%3E%3C/svg%3E`;
+                        }}
                       />
                       {!user && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -482,6 +486,10 @@ const Landing = () => {
                       src={getImageUrl(profile.profile_photo)}
                       alt={profile.name}
                       className="w-full h-full object-cover transition-all duration-300"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Crect width='400' height='500' fill='%23f0e8f0'/%3E%3Ccircle cx='200' cy='180' r='80' fill='%23c9a0c9'/%3E%3Cellipse cx='200' cy='420' rx='130' ry='110' fill='%23c9a0c9'/%3E%3Ctext x='200' y='490' font-family='Arial' font-size='22' fill='%23888' text-anchor='middle'%3ENo Photo%3C/text%3E%3C/svg%3E`;
+                      }}
                     />
                     {profile.is_premium && (
                       <div
