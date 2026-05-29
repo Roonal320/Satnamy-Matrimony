@@ -24,7 +24,7 @@ import ResetPassword from './pages/ResetPassword';
 import './lib/firebase';
 import './App.css';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-google-client-id.apps.googleusercontent.com';
 
 function App() {
   return (
