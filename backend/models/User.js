@@ -14,7 +14,17 @@ const UserSchema = new mongoose.Schema({
   },
   password_hash: {
     type: String,
-    required: true
+    required: false,
+    default: null
+  },
+  google_id: {
+    type: String,
+    default: null,
+    index: true
+  },
+  auth_provider: {
+    type: String,
+    default: "local"
   },
   name: {
     type: String,
@@ -135,6 +145,14 @@ const UserSchema = new mongoose.Schema({
   role: {
     type: String,
     default: "user"
+  },
+  resetPasswordToken: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: false,

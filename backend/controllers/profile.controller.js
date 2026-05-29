@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const View = require('../models/View');
+const Message = require('../models/Message');
 const profileService = require('../services/profile.service');
 const authService = require('../services/auth.service');
 const path = require('path');
@@ -317,6 +318,39 @@ async function getProfileViews(req, res) {
   }
 }
 
+/**
+ * Deletes the authenticated user's profile, cleaning up views, messages, and auth cookies.
+ */
+async function deleteProfile(req, res) {
+  try {
+    const userId = req.user.id;
+
+    // Delete user from db
+    const deleteResult = await User.deleteOne({ id: userId });
+    if (deleteResult.deletedCount === 0) {
+      return res.status(404).json({ detail: "User profile not found" });
+    }
+
+    // Clean up Views where user was viewer or viewed
+    await View.deleteMany({
+      $or: [{ viewer_id: userId }, { viewed_id: userId }]
+    });
+
+    // Clean up Messages where user was sender or receiver
+    await Message.deleteMany({
+      $or: [{ sender_id: userId }, { receiver_id: userId }]
+    });
+
+    // Clear auth cookies on client
+    authService.clearAuthCookies(res);
+
+    return res.status(200).json({ message: "Profile deleted successfully" });
+  } catch (err) {
+    console.error('Delete profile error:', err);
+    return res.status(500).json({ detail: "Internal server error" });
+  }
+}
+
 module.exports = {
   updateProfile,
   uploadPhoto,
@@ -324,5 +358,6 @@ module.exports = {
   getProfiles,
   advancedSearch,
   getProfileById,
-  getProfileViews
+  getProfileViews,
+  deleteProfile
 };

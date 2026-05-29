@@ -4,8 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import axios from 'axios';
-import { MapPin, Briefcase, GraduationCap, Heart, MessageCircle, ArrowLeft, Phone, User as UserIcon, Users, Lock, Crown, Camera } from 'lucide-react';
+import { MapPin, Briefcase, GraduationCap, Heart, MessageCircle, ArrowLeft, Phone, User as UserIcon, Users, Lock, Crown, Camera, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -19,6 +22,79 @@ const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Password Recovery / Settings States
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+
+  const handleCloseChangePasswordModal = () => {
+    setShowChangePasswordModal(false);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setChangePasswordError('');
+  };
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeleteConfirmText('');
+    setDeleteError('');
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setChangePasswordError('');
+
+    if (newPassword.length < 6) {
+      setChangePasswordError('New password must be at least 6 characters.');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setChangePasswordError('New passwords do not match.');
+      return;
+    }
+
+    setChangePasswordLoading(true);
+    try {
+      await axios.post(
+        `${API}/auth/change-password`,
+        { currentPassword, newPassword },
+        { withCredentials: true }
+      );
+      toast.success(t('profile.change_password_success'));
+      handleCloseChangePasswordModal();
+    } catch (err) {
+      setChangePasswordError(err.response?.data?.detail || 'Failed to update password.');
+    } finally {
+      setChangePasswordLoading(false);
+    }
+  };
+
+  const handleDeleteProfile = async () => {
+    if (deleteConfirmText !== 'DELETE') return;
+    setDeleteError('');
+    setDeleteLoading(true);
+
+    try {
+      await axios.delete(`${API}/profile`, { withCredentials: true });
+      toast.success(t('profile.delete_profile_success'));
+      if (updateUser) updateUser(false);
+      navigate('/');
+    } catch (err) {
+      setDeleteError(err.response?.data?.detail || 'Failed to delete profile.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -347,6 +423,180 @@ const Profile = () => {
                 )}
               </div>
             </div>
+
+            {/* Account Settings (only visible on own profile) */}
+            {isOwnProfile && (
+              <div className="bg-white rounded-2xl p-8" style={{ border: '1px solid var(--border)' }}>
+                <h2 className="font-heading text-2xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
+                  {t('profile.account_settings')}
+                </h2>
+                
+                {profile.auth_provider === 'google' && !profile.password_hash && (
+                  <p className="font-body text-xs mb-6 p-3 rounded-xl bg-orange-50 border border-orange-100 text-orange-800">
+                    {t('profile.google_linked')}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-4">
+                  <Button
+                    onClick={() => setShowChangePasswordModal(true)}
+                    variant="outline"
+                    className="rounded-full font-body font-medium transition-smooth border-2"
+                    style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                  >
+                    {t('profile.change_password')}
+                  </Button>
+                  
+                  <Button
+                    onClick={() => setShowDeleteModal(true)}
+                    variant="destructive"
+                    className="rounded-full font-body font-medium transition-smooth bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {t('profile.delete_profile')}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Change Password Dialog */}
+            <Dialog open={showChangePasswordModal} onOpenChange={handleCloseChangePasswordModal}>
+              <DialogContent className="max-w-[90vw] sm:max-w-md bg-white p-6 rounded-2xl border">
+                <DialogHeader>
+                  <DialogTitle className="font-heading text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    {t('profile.change_password')}
+                  </DialogTitle>
+                  <DialogDescription className="font-body text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Enter your password details below to change your password.
+                  </DialogDescription>
+                </DialogHeader>
+
+                {changePasswordError && (
+                  <div className="p-3 rounded-lg flex items-start gap-2 bg-red-50 border-l-4 border-red-500">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-500 mt-0.5" />
+                    <p className="text-xs font-body text-red-700">{changePasswordError}</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleChangePassword} className="space-y-4 mt-2">
+                  {profile?.password_hash && (
+                    <div>
+                      <Label htmlFor="current-pwd" className="font-body">{t('profile.current_password')}</Label>
+                      <Input
+                        id="current-pwd"
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        className="mt-1 h-11 font-body"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <Label htmlFor="new-pwd" className="font-body">{t('profile.new_password')}</Label>
+                    <Input
+                      id="new-pwd"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="mt-1 h-11 font-body"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="confirm-new-pwd" className="font-body">{t('profile.confirm_new_password')}</Label>
+                    <Input
+                      id="confirm-new-pwd"
+                      type="password"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="mt-1 h-11 font-body"
+                    />
+                  </div>
+
+                  <DialogFooter className="gap-2 mt-6 flex-row justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleCloseChangePasswordModal}
+                      className="rounded-full h-11 px-6 font-body"
+                    >
+                      {t('profile.cancel')}
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={changePasswordLoading}
+                      className="rounded-full h-11 px-6 text-white font-body"
+                      style={{ background: 'var(--primary)' }}
+                    >
+                      {changePasswordLoading ? 'Saving...' : t('profile.save_changes')}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Delete Profile Dialog */}
+            <Dialog open={showDeleteModal} onOpenChange={handleCloseDeleteModal}>
+              <DialogContent className="max-w-[90vw] sm:max-w-md bg-white p-6 rounded-2xl border">
+                <DialogHeader>
+                  <DialogTitle className="font-heading text-2xl font-bold mb-1 text-red-600">
+                    {t('profile.delete_confirm_title')}
+                  </DialogTitle>
+                  <DialogDescription className="font-body text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    {t('profile.delete_confirm_desc')}
+                  </DialogDescription>
+                </DialogHeader>
+
+                {deleteError && (
+                  <div className="p-3 rounded-lg flex items-start gap-2 bg-red-50 border-l-4 border-red-500">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-500 mt-0.5" />
+                    <p className="text-xs font-body text-red-700">{deleteError}</p>
+                  </div>
+                )}
+
+                <div className="space-y-4 mt-2">
+                  <div>
+                    <Label htmlFor="delete-confirm-input" className="font-body text-neutral-700 font-semibold">
+                      Type DELETE to confirm:
+                    </Label>
+                    <Input
+                      id="delete-confirm-input"
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="DELETE"
+                      required
+                      className="mt-1 h-11 font-body uppercase border-red-200 focus-visible:ring-red-500"
+                    />
+                  </div>
+
+                  <DialogFooter className="gap-2 mt-6 flex-row justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleCloseDeleteModal}
+                      className="rounded-full h-11 px-6 font-body"
+                    >
+                      {t('profile.cancel')}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleDeleteProfile}
+                      disabled={deleteLoading || deleteConfirmText !== 'DELETE'}
+                      className="rounded-full h-11 px-6 text-white font-body bg-red-600 hover:bg-red-700"
+                    >
+                      {deleteLoading ? 'Deleting...' : t('profile.delete_confirm_btn')}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>

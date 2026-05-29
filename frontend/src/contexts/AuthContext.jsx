@@ -76,6 +76,59 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Google Sign-In / Sign-Up: sends the Google ID token to the backend.
+   * Returns { success: true } if user exists (logged in),
+   * or { success: false, needsSignup: true, googleData: {...}, credential } if new user.
+   */
+  const googleLogin = async (credential) => {
+    try {
+      const { data } = await axios.post(
+        `${API}/auth/google`,
+        { credential },
+        { withCredentials: true }
+      );
+
+      if (data.needs_signup) {
+        return {
+          success: false,
+          needsSignup: true,
+          googleData: data.google_data,
+          credential,
+        };
+      }
+
+      // Existing user logged in
+      setUser(data);
+      return { success: true };
+    } catch (e) {
+      return {
+        success: false,
+        error: formatApiErrorDetail(e.response?.data?.detail) || e.message,
+      };
+    }
+  };
+
+  /**
+   * Complete Google registration with additional required fields.
+   */
+  const googleRegister = async (credential, formData) => {
+    try {
+      const { data } = await axios.post(
+        `${API}/auth/google/register`,
+        { credential, ...formData },
+        { withCredentials: true }
+      );
+      setUser(data);
+      return { success: true };
+    } catch (e) {
+      return {
+        success: false,
+        error: formatApiErrorDetail(e.response?.data?.detail) || e.message,
+      };
+    }
+  };
+
   const logout = async () => {
     try {
       await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
@@ -90,7 +143,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, googleRegister, logout, updateUser, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

@@ -45,6 +45,7 @@ const upload = multer({
 
 // Routes mapping
 router.put('/profile', authenticate, profileController.updateProfile);
+router.delete('/profile', authenticate, profileController.deleteProfile);
 
 router.post('/profile/photo', (req, res, next) => {
   authenticate(req, res, (err) => {
