@@ -11,6 +11,9 @@ import axios from 'axios';
 import { MapPin, Briefcase, GraduationCap, Heart, MessageCircle, ArrowLeft, Phone, User as UserIcon, Users, Lock, Crown, Camera, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import Cropper from 'react-easy-crop';
+import 'react-easy-crop/react-easy-crop.css';
+import { getCroppedImg } from '../lib/cropImage';
 
 const API = `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')}/api`;
 
@@ -22,6 +25,13 @@ const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Cropper States
+  const [cropImageSrc, setCropImageSrc] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
 
   // Password Recovery / Settings States
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -137,17 +147,41 @@ const Profile = () => {
     navigate(`/chat?user=${userId}`);
   };
 
-  const handlePhotoChange = async (e) => {
+  const handlePhotoChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (file) {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setCropImageSrc(reader.result);
+        setShowCropper(true);
+      });
+      reader.readAsDataURL(file);
+      // Reset input so same file can be re-selected
+      e.target.value = '';
+    }
+  };
+
+  const onCropComplete = (croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleSaveCrop = async () => {
+    if (!croppedAreaPixels || !cropImageSrc) return;
     setUploadingPhoto(true);
-    const formData = new FormData();
-    formData.append('file', file);
+    setShowCropper(false);
+    
     try {
+      const croppedImageBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+      const croppedFile = new File([croppedImageBlob], 'cropped-profile-photo.jpg', { type: 'image/jpeg' });
+      
+      const formData = new FormData();
+      formData.append('file', croppedFile);
+      
       const { data } = await axios.post(`${API}/profile/photo`, formData, {
         withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      
       // Update local profile state with new S3 URL
       setProfile((prev) => ({ ...prev, profile_photo: data.url }));
       if (updateUser) updateUser({ ...user, profile_photo: data.url });
@@ -157,8 +191,6 @@ const Profile = () => {
       toast.error('Photo upload failed. Please try again.');
     } finally {
       setUploadingPhoto(false);
-      // Reset input so same file can be re-selected
-      e.target.value = '';
     }
   };
 
@@ -595,6 +627,57 @@ const Profile = () => {
                     </Button>
                   </DialogFooter>
                 </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Image Cropper Dialog */}
+            <Dialog open={showCropper} onOpenChange={setShowCropper}>
+              <DialogContent className="max-w-[90vw] sm:max-w-xl bg-white border border-neutral-200 shadow-xl rounded-2xl p-6">
+                <DialogHeader>
+                  <DialogTitle className="font-heading text-xl font-bold text-center">Crop Profile Photo</DialogTitle>
+                </DialogHeader>
+                <div className="relative w-full h-[320px] bg-neutral-900 rounded-xl overflow-hidden mt-4">
+                  <Cropper
+                    image={cropImageSrc}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={1}
+                    onCropChange={setCrop}
+                    onZoomChange={setZoom}
+                    onCropComplete={onCropComplete}
+                  />
+                </div>
+                <div className="space-y-2 mt-4">
+                  <Label className="font-body text-sm font-medium text-neutral-600">Zoom</Label>
+                  <input
+                    type="range"
+                    value={zoom}
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    aria-label="Zoom"
+                    onChange={(e) => setZoom(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                  />
+                </div>
+                <DialogFooter className="flex flex-col sm:flex-row gap-4 mt-6">
+                  <Button
+                    type="button"
+                    onClick={() => setShowCropper(false)}
+                    className="flex-1 h-12 rounded-full font-body font-medium transition-all duration-200 border border-neutral-300"
+                    style={{ background: 'transparent', color: 'var(--text-primary)' }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSaveCrop}
+                    className="flex-1 h-12 rounded-full font-body font-medium text-white transition-all duration-200 shadow-md"
+                    style={{ background: 'var(--primary)' }}
+                  >
+                    Apply Crop
+                  </Button>
+                </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>

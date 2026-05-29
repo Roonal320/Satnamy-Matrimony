@@ -5,7 +5,7 @@ const profileService = require('../services/profile.service');
 const authService = require('../services/auth.service');
 const path = require('path');
 const fs = require('fs');
-const { getS3Url } = require('../config/s3');
+const { getS3Url, getS3KeyFromUrl, deleteFromS3 } = require('../config/s3');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
@@ -55,6 +55,16 @@ async function uploadPhoto(req, res) {
   try {
     if (!req.file) {
       return res.status(400).json({ detail: "No file uploaded" });
+    }
+
+    // Retrieve current user to find old profile photo
+    const currentUser = await User.findOne({ id: req.user.id });
+    if (currentUser && currentUser.profile_photo) {
+      const oldKey = getS3KeyFromUrl(currentUser.profile_photo);
+      if (oldKey) {
+        // Fire-and-forget delete of old S3 object
+        deleteFromS3(oldKey);
+      }
     }
 
     // multer-s3 sets req.file.location to the full public S3 URL
@@ -324,6 +334,15 @@ async function getProfileViews(req, res) {
 async function deleteProfile(req, res) {
   try {
     const userId = req.user.id;
+
+    // Delete profile photo from S3 if it exists
+    const userToDelete = await User.findOne({ id: userId });
+    if (userToDelete && userToDelete.profile_photo) {
+      const oldKey = getS3KeyFromUrl(userToDelete.profile_photo);
+      if (oldKey) {
+        deleteFromS3(oldKey);
+      }
+    }
 
     // Delete user from db
     const deleteResult = await User.deleteOne({ id: userId });

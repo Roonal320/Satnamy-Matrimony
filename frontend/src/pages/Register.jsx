@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -8,9 +9,11 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { AlertCircle, Eye, EyeOff, Check, X, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { logAnalyticsEvent } from '../lib/firebase';
+import { toast } from 'sonner';
 
 /**
  * Styled Google button matching the app's design system.
@@ -66,6 +69,7 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
+    confirmPassword: '',
     phone: '',
     gender: '',
     date_of_birth: '',
@@ -77,21 +81,134 @@ const Register = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  // Password Visibility States
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // OTP Verification States
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [devOtp, setDevOtp] = useState('');
+
+  // Cooldown countdown timer
+  useEffect(() => {
+    let timer = null;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const getMinDOB = () => {
+    const today = new Date();
+    const year = today.getFullYear() - 18;
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const calculateAge = (dob) => {
+    if (!dob) return 0;
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const checkPasswordRules = (pwd) => {
+    return {
+      hasLength: pwd.length >= 8,
+      hasUpper: /[A-Z]/.test(pwd),
+      hasNumber: /[0-9]/.test(pwd),
+      hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
+    };
+  };
+
+  const rules = checkPasswordRules(formData.password);
+  const isPasswordValid = rules.hasLength && rules.hasUpper && rules.hasNumber && rules.hasSpecial;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // 1. Password complexity check
+    if (!isPasswordValid) {
+      setError('Password does not meet complexity requirements.');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError(t('auth.password_mismatch', { defaultValue: 'Passwords do not match' }));
+      return;
+    }
+
+    // 2. DOB Age limit validation
+    if (calculateAge(formData.date_of_birth) < 18) {
+      setError(t('auth.dob_underage', { defaultValue: 'You must be at least 18 years old to register' }));
+      return;
+    }
+
     setLoading(true);
     logAnalyticsEvent('signup_attempt', { method: 'password' });
 
-    const result = await register(formData);
-    setLoading(false);
+    try {
+      const API = `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')}/api`;
+      const { data } = await axios.post(`${API}/auth/send-otp`, { email: formData.email });
+      
+      setDevOtp(data.devOtp || '');
+      setOtpCode('');
+      setOtpError('');
+      setShowOtpModal(true);
+      setResendCooldown(60);
+      toast.success(t('auth.otp_sent_success', { defaultValue: 'Verification code sent to your email!' }));
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to send verification code. Please try again.');
+      logAnalyticsEvent('signup_failure', { method: 'password', error: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyAndRegister = async (e) => {
+    e.preventDefault();
+    setOtpError('');
+    setOtpLoading(true);
+
+    const result = await register({ ...formData, otp: otpCode });
+    setOtpLoading(false);
 
     if (result.success) {
       logAnalyticsEvent('signup_success', { method: 'password' });
+      setShowOtpModal(false);
       navigate('/complete-profile');
     } else {
       logAnalyticsEvent('signup_failure', { method: 'password', error: result.error });
-      setError(result.error);
+      setOtpError(result.error);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    setOtpError('');
+    setDevOtp('');
+
+    try {
+      const API = `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')}/api`;
+      const { data } = await axios.post(`${API}/auth/send-otp`, { email: formData.email });
+      setDevOtp(data.devOtp || '');
+      setResendCooldown(60);
+      toast.success(t('auth.otp_sent_success', { defaultValue: 'Verification code sent to your email!' }));
+    } catch (err) {
+      setOtpError(err.response?.data?.detail || 'Failed to resend code. Please try again.');
     }
   };
 
@@ -175,7 +292,7 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="name" className="font-body">{t('auth.name')}</Label>
+                <Label htmlFor="name" className="font-body">{t('auth.name')} <span className="text-red-500">*</span></Label>
                 <Input
                   id="name"
                   data-testid="register-name-input"
@@ -189,7 +306,7 @@ const Register = () => {
               </div>
 
               <div>
-                <Label htmlFor="email" className="font-body">{t('auth.email')}</Label>
+                <Label htmlFor="email" className="font-body">{t('auth.email')} <span className="text-red-500">*</span></Label>
                 <Input
                   id="email"
                   data-testid="register-email-input"
@@ -202,22 +319,79 @@ const Register = () => {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="password" className="font-body">{t('auth.password')}</Label>
-                <Input
-                  id="password"
-                  data-testid="register-password-input"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => handleChange('password', e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="mt-2 h-12 font-body"
-                />
+              {/* Password */}
+              <div className="relative">
+                <Label htmlFor="password" className="font-body">{t('auth.password')} <span className="text-red-500">*</span></Label>
+                <div className="relative mt-2">
+                  <Input
+                    id="password"
+                    data-testid="register-password-input"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => handleChange('password', e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    className="h-12 pr-10 font-body"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div className="relative">
+                <Label htmlFor="confirmPassword" className="font-body">{t('auth.confirm_password', { defaultValue: 'Confirm Password' })} <span className="text-red-500">*</span></Label>
+                <div className="relative mt-2">
+                  <Input
+                    id="confirmPassword"
+                    data-testid="register-confirm-password-input"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    className="h-12 pr-10 font-body"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Password rules indicator checklist */}
+              <div className="col-span-1 md:col-span-2 p-4 rounded-xl bg-neutral-50 border border-neutral-200">
+                <p className="text-xs font-semibold font-body text-neutral-500 mb-2 uppercase tracking-wider">Password Requirements</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-body">
+                  <div className="flex items-center gap-2">
+                    {rules.hasLength ? <Check className="w-4 h-4 text-green-500" /> : <X className="w-4 h-4 text-neutral-400" />}
+                    <span className={rules.hasLength ? "text-green-700" : "text-neutral-500"}>8 characters</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {rules.hasUpper ? <Check className="w-4 h-4 text-green-500" /> : <X className="w-4 h-4 text-neutral-400" />}
+                    <span className={rules.hasUpper ? "text-green-700" : "text-neutral-500"}>Uppercase letter</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {rules.hasNumber ? <Check className="w-4 h-4 text-green-500" /> : <X className="w-4 h-4 text-neutral-400" />}
+                    <span className={rules.hasNumber ? "text-green-700" : "text-neutral-500"}>Number</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {rules.hasSpecial ? <Check className="w-4 h-4 text-green-500" /> : <X className="w-4 h-4 text-neutral-400" />}
+                    <span className={rules.hasSpecial ? "text-green-700" : "text-neutral-500"}>Special character</span>
+                  </div>
+                </div>
               </div>
 
               <div>
-                <Label htmlFor="phone" className="font-body">{t('auth.phone')}</Label>
+                <Label htmlFor="phone" className="font-body">{t('auth.phone')} <span className="text-red-500">*</span></Label>
                 <Input
                   id="phone"
                   data-testid="register-phone-input"
@@ -231,7 +405,7 @@ const Register = () => {
               </div>
 
               <div>
-                <Label htmlFor="gender" className="font-body">{t('landing.gender')}</Label>
+                <Label htmlFor="gender" className="font-body">{t('landing.gender')} <span className="text-red-500">*</span></Label>
                 <Select onValueChange={(value) => handleChange('gender', value)} required>
                   <SelectTrigger data-testid="register-gender-select" className="mt-2 h-12 font-body">
                     <SelectValue placeholder="Select gender" />
@@ -244,7 +418,7 @@ const Register = () => {
               </div>
 
               <div>
-                <Label htmlFor="dob" className="font-body">{t('auth.dob')}</Label>
+                <Label htmlFor="dob" className="font-body">{t('auth.dob')} <span className="text-red-500">*</span></Label>
                 <Input
                   id="dob"
                   data-testid="register-dob-input"
@@ -252,6 +426,7 @@ const Register = () => {
                   value={formData.date_of_birth}
                   onChange={(e) => handleChange('date_of_birth', e.target.value)}
                   required
+                  max={getMinDOB()}
                   className="mt-2 h-12 font-body"
                 />
               </div>
@@ -281,6 +456,96 @@ const Register = () => {
         </div>
       </div>
       </div>
+
+      <Dialog open={showOtpModal} onOpenChange={setShowOtpModal}>
+        <DialogContent className="sm:max-w-md bg-white border border-neutral-200 shadow-xl rounded-2xl p-6">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="font-heading text-2xl font-bold text-center" style={{ color: 'var(--text-primary)' }}>
+              {t('auth.otp_title')}
+            </DialogTitle>
+            <DialogDescription className="font-body text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
+              {t('auth.otp_subtitle')} <strong className="text-neutral-800">{formData.email}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleVerifyAndRegister} className="space-y-6 mt-4">
+            {otpError && (
+              <div className="p-3 rounded-lg flex items-start gap-3 bg-red-50 border-l-4 border-red-500">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-500 mt-0.5" />
+                <p className="text-sm font-body text-red-600">{otpError}</p>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="otpCode" className="font-body text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                {t('auth.otp_input')}
+              </Label>
+              <Input
+                id="otpCode"
+                data-testid="otp-input"
+                type="text"
+                maxLength={6}
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="123456"
+                required
+                className="mt-2 text-center text-3xl tracking-[0.75em] h-14 font-mono font-bold focus:ring-primary focus:border-primary border-neutral-300 rounded-xl"
+              />
+            </div>
+
+            {devOtp && (
+              <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-sm font-mono flex flex-col gap-1 shadow-inner">
+                <span className="font-semibold text-xs text-blue-600 uppercase tracking-wider">Developer Mode OTP</span>
+                <span className="text-lg font-bold tracking-wider">{devOtp}</span>
+              </div>
+            )}
+
+            <DialogFooter className="flex flex-col sm:flex-row gap-4 mt-6">
+              <Button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={resendCooldown > 0}
+                className="flex-1 h-12 rounded-full font-body font-medium transition-all duration-200 shadow-sm border border-neutral-300"
+                style={{
+                  background: 'transparent',
+                  color: resendCooldown > 0 ? 'var(--text-secondary)' : 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  if (resendCooldown <= 0) {
+                    e.currentTarget.style.background = 'var(--surface-secondary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (resendCooldown <= 0) {
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
+              >
+                {resendCooldown > 0 ? `${t('auth.resend_otp')} (${resendCooldown}s)` : t('auth.resend_otp')}
+              </Button>
+              <Button
+                type="submit"
+                disabled={otpLoading || otpCode.length !== 6}
+                className="flex-1 h-12 rounded-full font-body font-medium text-white transition-all duration-200 shadow-md"
+                style={{
+                  background: (otpLoading || otpCode.length !== 6) ? 'var(--text-secondary)' : 'var(--primary)'
+                }}
+                onMouseEnter={(e) => {
+                  if (!otpLoading && otpCode.length === 6) {
+                    e.currentTarget.style.background = 'var(--primary-hover)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!otpLoading && otpCode.length === 6) {
+                    e.currentTarget.style.background = 'var(--primary)';
+                  }
+                }}
+              >
+                {otpLoading ? 'Verifying...' : t('auth.verify_and_register')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );

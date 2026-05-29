@@ -5,6 +5,8 @@ const uuid = require('uuid');
 const { OAuth2Client } = require('google-auth-library');
 const crypto = require('crypto');
 const emailService = require('../services/email.service');
+const Otp = require('../models/Otp');
+const OtpAttempt = require('../models/OtpAttempt');
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -48,9 +50,17 @@ async function getGoogleUserInfo(credential) {
  */
 async function register(req, res) {
   try {
-    const { email, password, name, phone, gender, date_of_birth } = req.body;
-    if (!email || !password || !name || !phone || !gender || !date_of_birth) {
+    const { email, password, name, phone, gender, date_of_birth, otp } = req.body;
+    if (!email || !password || !name || !phone || !gender || !date_of_birth || !otp) {
       return res.status(422).json({ detail: "Missing required fields" });
+    }
+
+    // Age restriction: must be at least 18 years old
+    const dobDate = new Date(date_of_birth);
+    const eighteenYearsAgo = new Date();
+    eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+    if (dobDate > eighteenYearsAgo) {
+      return res.status(400).json({ detail: "User must be at least 18 years old" });
     }
 
     const emailLower = email.toLowerCase();
@@ -58,6 +68,15 @@ async function register(req, res) {
     if (existing) {
       return res.status(400).json({ detail: "Email already registered" });
     }
+
+    // Validate OTP
+    const activeOtp = await Otp.findOne({ email: emailLower });
+    if (!activeOtp || activeOtp.otp !== otp) {
+      return res.status(400).json({ detail: "Invalid or expired verification code" });
+    }
+
+    // Delete OTP once verified
+    await Otp.deleteOne({ _id: activeOtp._id });
 
     const userId = uuid.v4();
     const passwordHash = await cryptoUtils.hashPassword(password);
@@ -232,6 +251,14 @@ async function googleRegister(req, res) {
       return res.status(422).json({ detail: "Missing required fields" });
     }
 
+    // Age restriction: must be at least 18 years old
+    const dobDate = new Date(date_of_birth);
+    const eighteenYearsAgo = new Date();
+    eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+    if (dobDate > eighteenYearsAgo) {
+      return res.status(400).json({ detail: "User must be at least 18 years old" });
+    }
+
     let payload;
     try {
       payload = await getGoogleUserInfo(credential);
@@ -315,6 +342,60 @@ function logout(req, res) {
  */
 function getMe(req, res) {
   return res.status(200).json(req.user);
+}
+
+/**
+ * Sends a 6-digit verification OTP to the user's email, rate limited to 5 per hour.
+ */
+async function sendOtp(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(422).json({ detail: "Email is required" });
+    }
+
+    const emailLower = email.toLowerCase();
+
+    // Check if email already exists
+    const existing = await User.findOne({ email: emailLower });
+    if (existing) {
+      return res.status(400).json({ detail: "Email already registered" });
+    }
+
+    // Rate limiting: 5 sends per hour
+    const oneHourAgo = new Date(Date.now() - 3600 * 1000);
+    const attemptsCount = await OtpAttempt.countDocuments({
+      email: emailLower,
+      timestamp: { $gt: oneHourAgo }
+    });
+
+    if (attemptsCount >= 5) {
+      return res.status(429).json({ detail: "Verification limit exceeded. Please try again in 1 hour." });
+    }
+
+    // Generate cryptographically secure 6-digit numeric OTP code
+    const otp = crypto.randomInt(100000, 1000000).toString();
+
+    // Save to OTP storage (replace active OTP for this email)
+    await Otp.deleteMany({ email: emailLower });
+    await Otp.create({ email: emailLower, otp });
+
+    // Track the attempt
+    await OtpAttempt.create({ email: emailLower });
+
+    // Send email
+    const mailResult = await emailService.sendOtpEmail(emailLower, otp);
+
+    const response = { message: "Verification code sent to your email" };
+    if (mailResult.fallback && process.env.NODE_ENV !== 'production') {
+      response.devOtp = otp;
+    }
+
+    return res.status(200).json(response);
+  } catch (err) {
+    console.error('Send OTP error:', err);
+    return res.status(500).json({ detail: "Internal server error" });
+  }
 }
 
 /**
@@ -438,6 +519,7 @@ module.exports = {
   googleRegister,
   logout,
   getMe,
+  sendOtp,
   forgotPassword,
   resetPassword,
   changePassword

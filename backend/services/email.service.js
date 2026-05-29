@@ -52,6 +52,46 @@ async function sendResetPasswordEmail(email, name, resetLink) {
   }
 }
 
+/**
+ * Send email OTP verification code.
+ */
+async function sendOtpEmail(email, otp) {
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 8px;">
+      <h2 style="color: #9333ea; text-align: center;">Satnamy Matrimony</h2>
+      <p>Hello,</p>
+      <p>Thank you for registering on Satnamy Matrimony. Please use the following 6-digit verification code to complete your registration. This code is valid for 10 minutes.</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #9333ea; background-color: #f3e8ff; padding: 10px 20px; border-radius: 8px; border: 1px dashed #c084fc;">${otp}</span>
+      </div>
+      <p>If you did not initiate this request, you can safely ignore this email.</p>
+    </div>
+  `;
+
+  if (resend) {
+    try {
+      const response = await resend.emails.send({
+        from: SMTP_FROM,
+        to: email,
+        subject: 'Verify Your Email - Satnamy Matrimony',
+        html: htmlContent,
+      });
+      console.log(`OTP email successfully sent to ${email} via Resend. ID: ${response.data?.id}`);
+      return { sent: true };
+    } catch (err) {
+      console.error('Resend API send error:', err);
+      return { sent: false, error: err.message };
+    }
+  } else {
+    console.log('---------------- OTP VERIFICATION CODE (CONSOLE LOG FALLBACK) ----------------');
+    console.log(`To: ${email}`);
+    console.log(`OTP: ${otp}`);
+    console.log('-----------------------------------------------------------------------------');
+    return { sent: false, fallback: true };
+  }
+}
+
 module.exports = {
-  sendResetPasswordEmail
+  sendResetPasswordEmail,
+  sendOtpEmail
 };

@@ -8,10 +8,14 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import axios from 'axios';
 import { Upload, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import Cropper from 'react-easy-crop';
+import 'react-easy-crop/react-easy-crop.css';
+import { getCroppedImg } from '../lib/cropImage';
 
 const API = `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')}/api`;
 
@@ -23,6 +27,14 @@ const CompleteProfile = () => {
   const [loading, setLoading] = useState(false);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+
+  // Cropper States
+  const [cropImageSrc, setCropImageSrc] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
+
   const [formData, setFormData] = useState({
     height: '',
     weight: '',
@@ -48,8 +60,29 @@ const CompleteProfile = () => {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setCropImageSrc(reader.result);
+        setShowCropper(true);
+      });
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const onCropComplete = (croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleSaveCrop = async () => {
+    try {
+      const croppedImageBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+      const croppedFile = new File([croppedImageBlob], 'cropped-profile-photo.jpg', { type: 'image/jpeg' });
+      setPhotoFile(croppedFile);
+      setPhotoPreview(URL.createObjectURL(croppedImageBlob));
+      setShowCropper(false);
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to crop image. Please try again.');
     }
   };
 
@@ -73,10 +106,22 @@ const CompleteProfile = () => {
 
   const handleNext = async () => {
     if (step === 1) {
+      if (!formData.height || !formData.marital_status || !formData.caste || !formData.mother_tongue) {
+        toast.error('Please fill in all required fields.');
+        return;
+      }
       setStep(2);
     } else if (step === 2) {
+      if (!formData.education || !formData.income || !formData.city || !formData.state) {
+        toast.error('Please fill in all required fields.');
+        return;
+      }
       setStep(3);
     } else if (step === 3) {
+      if (!formData.about) {
+        toast.error('Please write something about yourself.');
+        return;
+      }
       setLoading(true);
       
       const photoUploaded = await uploadPhoto();
@@ -126,7 +171,7 @@ const CompleteProfile = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="height" className="font-body">Height (cm)</Label>
+                  <Label htmlFor="height" className="font-body">Height (cm) <span style={{ color: 'var(--error)' }}>*</span></Label>
                   <Input
                     id="height"
                     data-testid="profile-height-input"
@@ -134,6 +179,7 @@ const CompleteProfile = () => {
                     value={formData.height}
                     onChange={(e) => handleChange('height', e.target.value)}
                     placeholder="170"
+                    required
                     className="mt-2 h-12 font-body"
                   />
                 </div>
@@ -152,8 +198,8 @@ const CompleteProfile = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="marital_status" className="font-body">Marital Status</Label>
-                  <Select onValueChange={(value) => handleChange('marital_status', value)}>
+                  <Label htmlFor="marital_status" className="font-body">Marital Status <span style={{ color: 'var(--error)' }}>*</span></Label>
+                  <Select onValueChange={(value) => handleChange('marital_status', value)} required>
                     <SelectTrigger data-testid="profile-marital-status-select" className="mt-2 h-12 font-body">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
@@ -166,7 +212,7 @@ const CompleteProfile = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="caste" className="font-body">Caste/Sub-caste</Label>
+                  <Label htmlFor="caste" className="font-body">Caste/Sub-caste <span style={{ color: 'var(--error)' }}>*</span></Label>
                   <Input
                     id="caste"
                     data-testid="profile-caste-input"
@@ -174,12 +220,13 @@ const CompleteProfile = () => {
                     value={formData.caste}
                     onChange={(e) => handleChange('caste', e.target.value)}
                     placeholder="Enter caste"
+                    required
                     className="mt-2 h-12 font-body"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="mother_tongue" className="font-body">Mother Tongue</Label>
+                  <Label htmlFor="mother_tongue" className="font-body">Mother Tongue <span style={{ color: 'var(--error)' }}>*</span></Label>
                   <Input
                     id="mother_tongue"
                     data-testid="profile-mother-tongue-input"
@@ -187,6 +234,7 @@ const CompleteProfile = () => {
                     value={formData.mother_tongue}
                     onChange={(e) => handleChange('mother_tongue', e.target.value)}
                     placeholder="Hindi"
+                    required
                     className="mt-2 h-12 font-body"
                   />
                 </div>
@@ -198,7 +246,7 @@ const CompleteProfile = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="education" className="font-body">Education</Label>
+                  <Label htmlFor="education" className="font-body">Education <span style={{ color: 'var(--error)' }}>*</span></Label>
                   <Input
                     id="education"
                     data-testid="profile-education-input"
@@ -206,6 +254,7 @@ const CompleteProfile = () => {
                     value={formData.education}
                     onChange={(e) => handleChange('education', e.target.value)}
                     placeholder="Bachelor's Degree"
+                    required
                     className="mt-2 h-12 font-body"
                   />
                 </div>
@@ -224,8 +273,8 @@ const CompleteProfile = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="income" className="font-body">Annual Income</Label>
-                  <Select onValueChange={(value) => handleChange('income', value)}>
+                  <Label htmlFor="income" className="font-body">Annual Income <span style={{ color: 'var(--error)' }}>*</span></Label>
+                  <Select onValueChange={(value) => handleChange('income', value)} required>
                     <SelectTrigger data-testid="profile-income-select" className="mt-2 h-12 font-body">
                       <SelectValue placeholder="Select income range" />
                     </SelectTrigger>
@@ -242,7 +291,7 @@ const CompleteProfile = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="city" className="font-body">City</Label>
+                  <Label htmlFor="city" className="font-body">City <span style={{ color: 'var(--error)' }}>*</span></Label>
                   <Input
                     id="city"
                     data-testid="profile-city-input"
@@ -250,12 +299,13 @@ const CompleteProfile = () => {
                     value={formData.city}
                     onChange={(e) => handleChange('city', e.target.value)}
                     placeholder="Mumbai"
+                    required
                     className="mt-2 h-12 font-body"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <Label htmlFor="state" className="font-body">State</Label>
+                  <Label htmlFor="state" className="font-body">State <span style={{ color: 'var(--error)' }}>*</span></Label>
                   <Input
                     id="state"
                     data-testid="profile-state-input"
@@ -263,6 +313,7 @@ const CompleteProfile = () => {
                     value={formData.state}
                     onChange={(e) => handleChange('state', e.target.value)}
                     placeholder="Maharashtra"
+                    required
                     className="mt-2 h-12 font-body"
                   />
                 </div>
@@ -313,7 +364,7 @@ const CompleteProfile = () => {
               </div>
 
               <div>
-                <Label htmlFor="about" className="font-body">About Yourself</Label>
+                <Label htmlFor="about" className="font-body">About Yourself <span style={{ color: 'var(--error)' }}>*</span></Label>
                 <Textarea
                   id="about"
                   data-testid="profile-about-textarea"
@@ -321,6 +372,7 @@ const CompleteProfile = () => {
                   onChange={(e) => handleChange('about', e.target.value)}
                   placeholder="Tell us about yourself..."
                   rows={4}
+                  required
                   className="mt-2 font-body"
                 />
               </div>
@@ -409,6 +461,58 @@ const CompleteProfile = () => {
         </div>
       </div>
       </div>
+
+      {/* Image Cropper Dialog */}
+      <Dialog open={showCropper} onOpenChange={setShowCropper}>
+        <DialogContent className="sm:max-w-xl bg-white border border-neutral-200 shadow-xl rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl font-bold text-center">Crop Profile Photo</DialogTitle>
+          </DialogHeader>
+          <div className="relative w-full h-[320px] bg-neutral-900 rounded-xl overflow-hidden mt-4">
+            <Cropper
+              image={cropImageSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={1}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={onCropComplete}
+            />
+          </div>
+          <div className="space-y-2 mt-4">
+            <Label className="font-body text-sm font-medium text-neutral-600">Zoom</Label>
+            <input
+              type="range"
+              value={zoom}
+              min={1}
+              max={3}
+              step={0.1}
+              aria-label="Zoom"
+              onChange={(e) => setZoom(parseFloat(e.target.value))}
+              className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+            />
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-4 mt-6">
+            <Button
+              type="button"
+              onClick={() => setShowCropper(false)}
+              className="flex-1 h-12 rounded-full font-body font-medium transition-all duration-200 border border-neutral-300"
+              style={{ background: 'transparent', color: 'var(--text-primary)' }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveCrop}
+              className="flex-1 h-12 rounded-full font-body font-medium text-white transition-all duration-200 shadow-md"
+              style={{ background: 'var(--primary)' }}
+            >
+              Apply Crop
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );

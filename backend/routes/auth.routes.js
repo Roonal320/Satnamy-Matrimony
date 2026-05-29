@@ -5,6 +5,7 @@ const { authenticate } = require('../middleware/auth.middleware');
 const router = express.Router();
 
 router.post('/register', authController.register);
+router.post('/send-otp', authController.sendOtp);
 router.post('/login', authController.login);
 router.post('/google', authController.googleAuth);
 router.post('/google/register', authController.googleRegister);

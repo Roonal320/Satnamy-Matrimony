@@ -38,6 +38,25 @@ const GoogleCompleteSignup = () => {
     return null;
   }
 
+  const getMinDOB = () => {
+    const today = new Date();
+    const year = today.getFullYear() - 18;
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const calculateAge = (dob) => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   const handleChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -48,6 +67,11 @@ const GoogleCompleteSignup = () => {
 
     if (!formData.phone || !formData.gender || !formData.date_of_birth) {
       setError('Please fill in all required fields.');
+      return;
+    }
+
+    if (calculateAge(formData.date_of_birth) < 18) {
+      setError(t('auth.dob_underage', { defaultValue: 'You must be at least 18 years old to register' }));
       return;
     }
 
@@ -184,6 +208,7 @@ const GoogleCompleteSignup = () => {
                     value={formData.date_of_birth}
                     onChange={(e) => handleChange('date_of_birth', e.target.value)}
                     required
+                    max={getMinDOB()}
                     className="mt-2 h-12 font-body"
                   />
                 </div>
