@@ -20,6 +20,7 @@ const Footer = () => {
     { label: 'About Us', path: '/about' },
     { label: 'Contact Us', path: '/contact' },
     { label: 'Privacy Policy', path: '/privacy-policy' },
+    { label: 'Terms & Conditions', path: '/terms' },
     { label: 'Return & Refund Policy', path: '/refund-policy' },
     { label: 'Cancellation Policy', path: '/cancellation-policy' },
     { label: 'Shipping Policy', path: '/shipping-policy' },

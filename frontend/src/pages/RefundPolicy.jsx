@@ -18,7 +18,7 @@ const Highlight = ({ label, value }) => (
 );
 
 const RefundPolicy = () => {
-  const updated = 'May 25, 2025';
+  const updated = 'June 1, 2026';
   return (
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
       <Header />
@@ -30,69 +30,56 @@ const RefundPolicy = () => {
       <div className="max-w-4xl mx-auto px-4 py-14">
         <div className="bg-white rounded-2xl p-8 md:p-12" style={{ border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
           <p className="font-body mb-10 p-4 rounded-xl text-sm" style={{ background: 'rgba(200,75,49,0.06)', color: 'var(--text-secondary)', borderLeft: '4px solid var(--primary)' }}>
-            This website is operated by <strong>Roonal Khandelwal</strong>. Please read this policy carefully before purchasing any premium plan on Satnami Shaadi (satnamishaadiii.com).
+            This website is operated by <strong>Roonal Khandelwal</strong>. Please read this Return & Refund Policy carefully before purchasing any premium plan on Satnami Matrimony / Satnami Shaadi (satnamishaadiii.com).
           </p>
 
           {/* Key Highlights */}
           <div className="grid gap-3 mb-10">
-            <Highlight label="Refund Window" value="7 (seven) calendar days from the date of purchase" />
-            <Highlight label="Refund Mode" value="Original payment method (Credit/Debit Card, UPI, Net Banking, Wallet)" />
-            <Highlight label="Processing Time" value="5–10 business days after approval" />
-            <Highlight label="Eligibility" value="Unused premium features; account not found in violation of Terms" />
+            <Highlight label="General Refund Policy" value="All premium membership payments are strictly non-refundable." />
+            <Highlight label="Guarantee Disclaimer" value="We offer no guarantees on matches, responses, or compatibility." />
+            <Highlight label="Billing Errors" value="Duplicate payments will be refunded in full." />
+            <Highlight label="Processing Time" value="5 to 10 business days for approved billing error corrections." />
           </div>
 
-          <Section title="1. Nature of Service">
-            <p>Satnami Shaadi is a <strong>digital matrimonial services platform</strong>. All premium plans are subscription-based digital services. Since digital services are consumed immediately upon activation, our refund policy is carefully defined to ensure fairness to both users and the platform.</p>
+          <Section title="1. Non-Refundable Subscriptions">
+            <p>
+              Satnami Matrimony provides digital matrimonial matching subscriptions. Because premium features (including accessing contact details, sending messages, and profile highlights) are activated and accessible immediately upon successful payment confirmation, <strong>all membership fees and subscription plans are strictly non-refundable</strong>.
+            </p>
+            <p>
+              As a matrimonial service platform, we connect profiles within the Satnami community, but we cannot guarantee that any member will find a match, receive interest acceptances, or get responses. Compatibility and match outcomes depend entirely on personal choices, communication, and registration activity.
+            </p>
           </Section>
 
-          <Section title="2. Eligibility for Refund">
-            <p>You may be eligible for a refund if:</p>
+          <Section title="2. Exclusions & Disclaimers">
+            <p>We do not issue refunds or pro-rata adjustments under any of the following circumstances:</p>
             <ul className="list-disc pl-5 space-y-1">
-              <li>You request a refund within <strong>7 calendar days</strong> of the purchase date.</li>
-              <li>You have not extensively used the premium features (e.g., viewed fewer than 5 premium profiles or sent fewer than 5 messages).</li>
-              <li>Your account is in good standing and has not been found in violation of our Terms & Conditions.</li>
-              <li>The refund request is due to a technical error on our platform (e.g., double charge, payment deducted but plan not activated).</li>
+              <li>Change of mind or finding a match outside the website.</li>
+              <li>Receiving no responses, low activity, or lack of matching profiles that meet your specific filters.</li>
+              <li>Partial use of the premium subscription duration.</li>
+              <li>Suspension, blocking, or termination of your account due to a violation of our Terms & Conditions (such as harassment, commercial usage, spam, or creating fake profiles).</li>
             </ul>
           </Section>
 
-          <Section title="3. Non-Refundable Situations">
-            <p>Refunds will <strong>not</strong> be issued in the following cases:</p>
+          <Section title="3. Duplicate Charges & Billing Discrepancies">
+            <p>
+              If your bank account was charged twice for a single subscription, or if payment was successful but the premium subscription was not activated, this constitutes a billing error.
+            </p>
+            <p>
+              Please notify us immediately by emailing your transaction receipt and registered account details to <a href="mailto:satnamishaadiii@gmail.com" style={{ color: 'var(--primary)' }} className="underline">satnamishaadiii@gmail.com</a>. We will verify the transaction with our payment gateway (PayU) and reverse duplicate charges or manually activate your subscription within <strong>48 hours</strong>.
+            </p>
+          </Section>
+
+          <Section title="4. Refund Modes for Approved Billing Corrections">
+            <p>Approved refunds for duplicate payments are processed through our payment gateway and credited back to the original payment source:</p>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Refund requested after 7 calendar days from purchase.</li>
-              <li>You have extensively used premium features (messaging, contact views, priority listing).</li>
-              <li>Account suspended or terminated for violation of our Terms & Conditions.</li>
-              <li>Dissatisfaction with match quality or quantity, as matches depend on community data and personal preferences.</li>
-              <li>Change of mind after making significant use of the subscription.</li>
-              <li>Partial use of subscription period — no pro-rata refunds are provided.</li>
+              <li><strong>Cards (Credit/Debit):</strong> Reverted to the card account within 7 to 10 business days.</li>
+              <li><strong>UPI (GPay, PhonePe, Paytm, etc.):</strong> Reverted to the UPI ID within 3 to 5 business days.</li>
+              <li><strong>Net Banking:</strong> Reverted to the originating bank account within 5 to 7 business days.</li>
             </ul>
+            <p className="italic text-xs">Note: Refund timelines are dependent on bank clearing cycles and may vary. We are not responsible for bank-side delays.</p>
           </Section>
 
-          <Section title="4. Refund Mode">
-            <p>Approved refunds will be credited back to the <strong>original payment method</strong> used at the time of purchase:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li><strong>Credit/Debit Card:</strong> Refunded to the same card within 5–10 business days.</li>
-              <li><strong>UPI:</strong> Refunded to the same UPI ID within 3–7 business days.</li>
-              <li><strong>Net Banking:</strong> Refunded to the originating bank account within 5–10 business days.</li>
-              <li><strong>Wallets (Paytm, PhonePe, etc.):</strong> Refunded to the same wallet within 2–5 business days.</li>
-            </ul>
-            <p className="text-sm italic">Note: Actual timelines may vary depending on your bank or payment provider. We are not responsible for delays caused by third-party payment processors.</p>
-          </Section>
-
-          <Section title="5. How to Request a Refund">
-            <p>To request a refund, please contact us within the eligible window:</p>
-            <ol className="list-decimal pl-5 space-y-1">
-              <li>Email us at <a href="mailto:satnamishaadiii@gmail.com" style={{ color: 'var(--primary)' }} className="underline">satnamishaadiii@gmail.com</a> with subject line: <em>"Refund Request – [Your Registered Email]"</em></li>
-              <li>Include your full name, registered email, transaction ID, date of purchase, and reason for the refund request.</li>
-              <li>Our team will review your request within <strong>3 business days</strong> and respond with a decision.</li>
-              <li>If approved, the refund will be initiated within <strong>2 business days</strong> of approval.</li>
-            </ol>
-          </Section>
-
-          <Section title="6. Technical Issues & Billing Errors">
-            <p>If you experience a double charge, failed transaction with money deducted, or a plan not activated despite successful payment, please contact us immediately with your payment screenshot and transaction ID. We will resolve billing errors on a priority basis within <strong>48 hours</strong>.</p>
-          </Section>
-
-          <Section title="7. Contact">
+          <Section title="5. Contact Us">
             <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)' }}>
               <p><strong>Roonal Khandelwal</strong></p>
               <p>10/1143 Shivanand Nagar Sec-1, Khamtarai, Raipur, Chhattisgarh – 492008</p>

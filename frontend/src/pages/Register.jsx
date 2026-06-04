@@ -80,6 +80,7 @@ const Register = () => {
   const { register, googleLogin } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [agreeTerms, setAgreeTerms] = useState(false);
 
   // Password Visibility States
   const [showPassword, setShowPassword] = useState(false);
@@ -139,6 +140,11 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!agreeTerms) {
+      setError('You must agree to the Terms & Conditions and Privacy Policy to register.');
+      return;
+    }
 
     // 1. Password complexity check
     if (!isPasswordValid) {
@@ -430,6 +436,28 @@ const Register = () => {
                   className="mt-2 h-12 font-body"
                 />
               </div>
+            </div>
+
+            <div className="flex items-start gap-2 py-2">
+              <input
+                id="agreeTerms"
+                type="checkbox"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                className="w-4 h-4 mt-1 rounded border-neutral-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                required
+              />
+              <Label htmlFor="agreeTerms" className="font-body text-xs leading-normal select-none cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
+                I agree to the{' '}
+                <Link to="/terms" target="_blank" className="font-medium hover:underline" style={{ color: 'var(--primary)' }}>
+                  Terms & Conditions
+                </Link>{' '}
+                and{' '}
+                <Link to="/privacy-policy" target="_blank" className="font-medium hover:underline" style={{ color: 'var(--primary)' }}>
+                  Privacy Policy
+                </Link>
+                .
+              </Label>
             </div>
 
             <Button

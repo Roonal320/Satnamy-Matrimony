@@ -9,13 +9,8 @@ import { useTranslation } from 'react-i18next';
 const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-
-  const toggleLanguage = () => {
-    const newLang = i18n.language.startsWith('hi') ? 'en' : 'hi';
-    i18n.changeLanguage(newLang);
-  };
 
   return (
     <header
@@ -58,15 +53,6 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
-            <Button
-              onClick={toggleLanguage}
-              variant="outline"
-              className="font-body text-xs sm:text-sm font-bold rounded-full border-2 h-8 sm:h-10 px-2 sm:px-3"
-              style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-            >
-              {i18n.language.startsWith('hi') ? 'English' : 'हिंदी'}
-            </Button>
-            
             <Button
               data-testid="nav-home-button"
               onClick={() => navigate('/')}
@@ -204,7 +190,10 @@ const Header = () => {
 
       {/* Mobile Dropdown Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 z-40 bg-white/98 backdrop-blur-xl border-b shadow-lg animate-in fade-in slide-in-from-top-5 duration-200" style={{ borderColor: 'var(--border)' }}>
+        <div
+          className="md:hidden absolute top-full left-0 right-0 z-40 bg-white backdrop-blur-xl border-b shadow-lg animate-in fade-in slide-in-from-top-5 duration-200"
+          style={{ background: 'rgba(255, 255, 255, 0.98)', borderColor: 'var(--border)' }}
+        >
           <div className="flex flex-col p-4 gap-2">
             <Button
               data-testid="nav-home-button"
@@ -301,23 +290,6 @@ const Header = () => {
                 </Button>
               </>
             )}
-
-            <div className="border-t my-2" style={{ borderColor: 'var(--border)' }}></div>
-
-            <div className="flex items-center justify-between px-3 py-1">
-              <span className="text-xs font-body font-medium text-neutral-500">Language / भाषा</span>
-              <Button
-                onClick={() => {
-                  toggleLanguage();
-                  setMobileMenuOpen(false);
-                }}
-                variant="outline"
-                className="font-body text-xs font-bold rounded-full border-2 h-8 px-3"
-                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-              >
-                {i18n.language.startsWith('hi') ? 'English' : 'हिंदी'}
-              </Button>
-            </div>
           </div>
         </div>
       )}
