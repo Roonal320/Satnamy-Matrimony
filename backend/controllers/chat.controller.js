@@ -30,6 +30,12 @@ async function sendMessage(req, res) {
     const msgObj = message.toObject();
     delete msgObj._id;
 
+    const io = req.app.get('io');
+    if (io) {
+      io.to(receiver_id).emit('new_message', msgObj);
+      io.to(user.id).emit('new_message', msgObj);
+    }
+
     return res.status(200).json(msgObj);
   } catch (err) {
     console.error(err);

@@ -10,6 +10,7 @@ import axios from 'axios';
 import { ArrowLeft, Send, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { io } from 'socket.io-client';
 
 const API = `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')}/api`;
 
@@ -26,6 +27,12 @@ const Chat = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Maintain ref to activeChat to avoid closure scope issues in socket callback
+  const activeChatRef = React.useRef(activeChat);
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
+
   useEffect(() => {
     fetchConversations();
   }, []);
@@ -35,6 +42,34 @@ const Chat = () => {
       loadChatWithUser(selectedUserId);
     }
   }, [selectedUserId]);
+
+  // Connect to Socket.io for real-time messages
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const backendUrl = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000').replace('/api', '');
+    const socket = io(backendUrl, {
+      withCredentials: true,
+      transports: ['polling', 'websocket']
+    });
+
+    socket.emit('join', user.id);
+
+    socket.on('new_message', (msg) => {
+      const currentActiveChat = activeChatRef.current;
+      if (currentActiveChat && (msg.sender_id === currentActiveChat.id || msg.receiver_id === currentActiveChat.id)) {
+        setMessages((prev) => {
+          if (prev.some(m => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
+      }
+      fetchConversations();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user?.id]);
 
   const fetchConversations = async () => {
     try {

@@ -8,6 +8,8 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const http = require('http');
+const { Server } = require('socket.io');
 const { connectDb } = require('./config/db');
 const apiRouter = require('./routes/index');
 
@@ -35,6 +37,34 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With', 'Accept']
 }));
 
+// Create HTTP Server wrapping Express app and mount Socket.io
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: origins,
+    credentials: true
+  }
+});
+
+// Setup Socket.io connection events
+io.on('connection', (socket) => {
+  console.log(`Socket connected: ${socket.id}`);
+  
+  socket.on('join', (userId) => {
+    if (userId) {
+      socket.join(userId);
+      console.log(`Socket ${socket.id} joined user room ${userId}`);
+    }
+  });
+  
+  socket.on('disconnect', () => {
+    console.log(`Socket disconnected: ${socket.id}`);
+  });
+});
+
+// Share io instance with routing controllers
+app.set('io', io);
+
 // Mount modular API routes under /api
 app.use('/api', apiRouter);
 
@@ -48,9 +78,9 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, async () => {
+server.listen(PORT, async () => {
   await connectDb();
-  console.log(`Modular MVC server is running on port ${PORT}`);
+  console.log(`Modular MVC server is running on port ${PORT} with Socket.io`);
 });
 
 // Graceful Shutdown
