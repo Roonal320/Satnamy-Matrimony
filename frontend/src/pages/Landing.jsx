@@ -8,7 +8,7 @@ import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
 import axios from 'axios';
-import { Search, Filter, MapPin, Briefcase, GraduationCap, Crown, Heart, Lock } from 'lucide-react';
+import { Search, Filter, MapPin, Briefcase, GraduationCap, Crown, Heart, Lock, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const API = `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')}/api`;
@@ -296,23 +296,35 @@ const Landing = () => {
           </Sheet>
         </div>
 
-        {/* Personal Matchmaker VIP Support Banner */}
-        {user?.is_premium && user?.premium_plan?.includes('platinum') && (
-          <div className="mb-6 p-4 sm:p-5 rounded-2xl border bg-gradient-to-r from-gray-950 via-gray-900 to-gray-800 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl border-gray-800">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/30 flex-shrink-0">
-                <Crown className="w-6 h-6 animate-pulse" />
-              </div>
-              <div className="text-center sm:text-left">
-                <h4 className="font-heading font-bold text-base text-amber-400">Platinum VIP Matchmaker Active</h4>
-                <p className="font-body text-xs text-gray-300">Your dedicated expert matchmaker: <strong>Shreya Sharma</strong> (+91 98765 43210)</p>
-              </div>
+        {/* Launch Promotion Alert Banner */}
+        <div 
+          className="mb-6 p-4 sm:p-5 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md" 
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(200, 75, 49, 0.08) 100%)',
+            borderColor: 'rgba(212, 175, 55, 0.25)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 flex-shrink-0">
+              <Sparkles className="w-5 h-5 animate-pulse" />
             </div>
-            <a href="tel:+919876543210" className="bg-amber-500 hover:bg-amber-600 text-black font-body font-bold text-xs rounded-full py-2.5 px-5 transition-all shadow-md w-full sm:w-auto text-center">
-              Call Matchmaker
-            </a>
+            <div className="text-center sm:text-left">
+              <h4 className="font-heading font-bold text-base text-[var(--primary)]">
+                {user ? '🎉 6 Months Free Premium Active!' : '🎉 Special Offer: 6 Months Free Premium!'}
+              </h4>
+              <p className="font-body text-xs text-[var(--text-secondary)]">
+                To celebrate our launch, all premium features (unlimited messaging, viewing contact details, seeing visitors) are <strong>100% free for everyone for the first 6 months</strong>.
+              </p>
+            </div>
           </div>
-        )}
+          <Button
+            onClick={() => navigate(user ? '/premium' : '/register')}
+            className="font-body text-xs rounded-full h-9 px-4 flex-shrink-0 w-full sm:w-auto text-white shadow-sm"
+            style={{ background: 'var(--primary)' }}
+          >
+            {user ? 'Learn More' : 'Register Free Now'}
+          </Button>
+        </div>
 
         {/* Tab Navigation */}
         {user && (

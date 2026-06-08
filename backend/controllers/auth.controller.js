@@ -122,6 +122,19 @@ async function register(req, res) {
     const userResponse = newUser.toObject();
     delete userResponse.password_hash;
     delete userResponse._id;
+    userResponse.is_premium = true;
+    userResponse.premium_plan = 'platinum_12';
+    userResponse.premium_name = 'Platinum';
+    userResponse.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+    userResponse.premium_features = [
+      'Unlimited Messaging',
+      'View Contact Details',
+      'Profile Boost (Unlimited)',
+      'Bold Listing in Search',
+      'Top Spotlight Profile',
+      'Personal Matchmaker',
+      'Priority Support 24/7'
+    ];
 
     return res.status(200).json(userResponse);
   } catch (err) {
@@ -166,6 +179,19 @@ async function login(req, res) {
     const userResponse = user.toObject();
     delete userResponse.password_hash;
     delete userResponse._id;
+    userResponse.is_premium = true;
+    userResponse.premium_plan = 'platinum_12';
+    userResponse.premium_name = 'Platinum';
+    userResponse.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+    userResponse.premium_features = [
+      'Unlimited Messaging',
+      'View Contact Details',
+      'Profile Boost (Unlimited)',
+      'Bold Listing in Search',
+      'Top Spotlight Profile',
+      'Personal Matchmaker',
+      'Priority Support 24/7'
+    ];
 
     return res.status(200).json(userResponse);
   } catch (err) {
@@ -220,6 +246,19 @@ async function googleAuth(req, res) {
       const userResponse = user.toObject();
       delete userResponse.password_hash;
       delete userResponse._id;
+      userResponse.is_premium = true;
+      userResponse.premium_plan = 'platinum_12';
+      userResponse.premium_name = 'Platinum';
+      userResponse.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+      userResponse.premium_features = [
+        'Unlimited Messaging',
+        'View Contact Details',
+        'Profile Boost (Unlimited)',
+        'Bold Listing in Search',
+        'Top Spotlight Profile',
+        'Personal Matchmaker',
+        'Priority Support 24/7'
+      ];
 
       return res.status(200).json(userResponse);
     }
@@ -321,6 +360,19 @@ async function googleRegister(req, res) {
     const userResponse = newUser.toObject();
     delete userResponse.password_hash;
     delete userResponse._id;
+    userResponse.is_premium = true;
+    userResponse.premium_plan = 'platinum_12';
+    userResponse.premium_name = 'Platinum';
+    userResponse.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+    userResponse.premium_features = [
+      'Unlimited Messaging',
+      'View Contact Details',
+      'Profile Boost (Unlimited)',
+      'Bold Listing in Search',
+      'Top Spotlight Profile',
+      'Personal Matchmaker',
+      'Priority Support 24/7'
+    ];
 
     return res.status(200).json(userResponse);
   } catch (err) {

@@ -107,9 +107,8 @@ const Premium = () => {
   ];
 
   const handleSubscribe = async (tier) => {
-    const planKey = `${tier.id}_${selectedDuration}`;
-    const price = tier.prices[selectedDuration];
-    setLoading(planKey);
+    toast.info("All premium features are already unlocked under the 6-month free launch promotion!");
+    return;
 
     try {
       const { data: order } = await axios.post(
@@ -174,6 +173,30 @@ const Premium = () => {
           </h1>
           <p className="font-body text-sm sm:text-base md:text-lg max-w-2xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
             {t('premium.subtitle')}
+          </p>
+        </div>
+
+        {/* Promo Notice */}
+        <div 
+          className="mb-8 p-6 rounded-2xl text-center max-w-4xl mx-auto border" 
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(200, 75, 49, 0.1) 100%)',
+            borderColor: 'rgba(212, 175, 55, 0.3)',
+            boxShadow: '0 4px 30px rgba(0, 0, 0, 0.03)',
+            backdropFilter: 'blur(5px)'
+          }}
+        >
+          <div className="inline-flex items-center gap-2 mb-3 bg-white/80 px-4 py-1.5 rounded-full border border-[var(--secondary)]/40 shadow-sm">
+            <Sparkles className="w-4 h-4 text-[var(--secondary)] animate-pulse" />
+            <span className="font-body text-xs font-bold uppercase tracking-wider text-[var(--primary)]">
+              Special Launch Offer
+            </span>
+          </div>
+          <h2 className="font-heading text-xl sm:text-2xl font-bold mb-2 text-[var(--text-primary)]">
+            Enjoy 6 Months of Free Premium!
+          </h2>
+          <p className="font-body text-xs sm:text-sm text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed">
+            To celebrate our launch and support the Satnami community, all premium features—including unlimited messaging, viewing contact details, and spotlight listings—are <strong>100% free for everyone for the first 6 months</strong>. After this period, premium features will require a subscription. Enjoy connecting with matches!
           </p>
         </div>
 
@@ -289,18 +312,13 @@ const Premium = () => {
                 {/* CTA Button */}
                 <Button
                   data-testid={`subscribe-${tier.id}-button`}
-                  onClick={() => handleSubscribe(tier)}
-                  disabled={loading === `${tier.id}_${selectedDuration}` || (user?.premium_name === tier.name)}
-                  className="w-full h-11 sm:h-12 md:h-14 rounded-full font-body font-medium text-sm sm:text-base text-white transition-all duration-200 hover:scale-[1.02] shadow-md"
+                  disabled={true}
+                  className="w-full h-11 sm:h-12 md:h-14 rounded-full font-body font-medium text-sm sm:text-base text-white opacity-90 cursor-default shadow-md"
                   style={{
-                    background: loading === `${tier.id}_${selectedDuration}` ? 'var(--text-secondary)' : tier.gradient,
+                    background: 'var(--success)',
                   }}
                 >
-                  {loading === `${tier.id}_${selectedDuration}`
-                    ? 'Processing...'
-                    : user?.premium_name === tier.name
-                    ? t('premium.current_plan')
-                    : t('premium.buy_now')}
+                  Active (Free Launch Offer)
                 </Button>
               </div>
             </div>

@@ -34,6 +34,21 @@ async function authenticate(req, res, next) {
     delete userObj.password_hash;
     delete userObj._id;
     
+    // Explicitly force premium launch promotion attributes
+    userObj.is_premium = true;
+    userObj.premium_plan = 'platinum_12';
+    userObj.premium_name = 'Platinum';
+    userObj.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+    userObj.premium_features = [
+      'Unlimited Messaging',
+      'View Contact Details',
+      'Profile Boost (Unlimited)',
+      'Bold Listing in Search',
+      'Top Spotlight Profile',
+      'Personal Matchmaker',
+      'Priority Support 24/7'
+    ];
+
     req.user = userObj;
     next();
   } catch (err) {

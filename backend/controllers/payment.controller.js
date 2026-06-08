@@ -30,6 +30,7 @@ function getPlans(req, res) {
  */
 async function createOrder(req, res) {
   try {
+    return res.status(403).json({ detail: "Direct ordering is disabled. All premium features are currently active and free under the launch promotion." });
     const user = req.user;
     const { plan, amount, frontend_url } = req.body;
 

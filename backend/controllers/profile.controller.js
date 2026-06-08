@@ -38,6 +38,19 @@ async function updateProfile(req, res) {
     const userObj = updatedUser.toObject();
     delete userObj.password_hash;
     delete userObj._id;
+    userObj.is_premium = true;
+    userObj.premium_plan = 'platinum_12';
+    userObj.premium_name = 'Platinum';
+    userObj.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+    userObj.premium_features = [
+      'Unlimited Messaging',
+      'View Contact Details',
+      'Profile Boost (Unlimited)',
+      'Bold Listing in Search',
+      'Top Spotlight Profile',
+      'Personal Matchmaker',
+      'Priority Support 24/7'
+    ];
     return res.status(200).json(userObj);
   } catch (err) {
     console.error(err);
@@ -180,7 +193,23 @@ async function getProfiles(req, res) {
     }
 
     const profiles = await User.find(query, { password_hash: 0, _id: 0, email: 0, phone: 0 });
-    const profilesList = profiles.map(p => p.toObject());
+    const profilesList = profiles.map(p => {
+      const pObj = p.toObject();
+      pObj.is_premium = true;
+      pObj.premium_plan = 'platinum_12';
+      pObj.premium_name = 'Platinum';
+      pObj.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+      pObj.premium_features = [
+        'Unlimited Messaging',
+        'View Contact Details',
+        'Profile Boost (Unlimited)',
+        'Bold Listing in Search',
+        'Top Spotlight Profile',
+        'Personal Matchmaker',
+        'Priority Support 24/7'
+      ];
+      return pObj;
+    });
 
     // Sort matching profiles
     profilesList.sort((a, b) => {
@@ -240,7 +269,23 @@ async function advancedSearch(req, res) {
       .skip(skip)
       .limit(limit);
 
-    const profilesList = profiles.map(p => p.toObject());
+    const profilesList = profiles.map(p => {
+      const pObj = p.toObject();
+      pObj.is_premium = true;
+      pObj.premium_plan = 'platinum_12';
+      pObj.premium_name = 'Platinum';
+      pObj.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+      pObj.premium_features = [
+        'Unlimited Messaging',
+        'View Contact Details',
+        'Profile Boost (Unlimited)',
+        'Bold Listing in Search',
+        'Top Spotlight Profile',
+        'Personal Matchmaker',
+        'Priority Support 24/7'
+      ];
+      return pObj;
+    });
 
     // Sort by plan priority
     profilesList.sort((a, b) => {
@@ -270,6 +315,19 @@ async function getProfileById(req, res) {
     const profileObj = profile.toObject();
     delete profileObj.password_hash;
     delete profileObj._id;
+    profileObj.is_premium = true;
+    profileObj.premium_plan = 'platinum_12';
+    profileObj.premium_name = 'Platinum';
+    profileObj.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+    profileObj.premium_features = [
+      'Unlimited Messaging',
+      'View Contact Details',
+      'Profile Boost (Unlimited)',
+      'Bold Listing in Search',
+      'Top Spotlight Profile',
+      'Personal Matchmaker',
+      'Priority Support 24/7'
+    ];
 
     // Log profile view activity if viewing someone else
     if (currentUser.id !== userId) {
@@ -317,6 +375,9 @@ async function getProfileViews(req, res) {
       if (viewer) {
         const viewerObj = viewer.toObject();
         viewerObj.viewed_at = v.timestamp;
+        viewerObj.is_premium = true;
+        viewerObj.premium_plan = 'platinum_12';
+        viewerObj.premium_name = 'Platinum';
         viewers.push(viewerObj);
       }
     }
