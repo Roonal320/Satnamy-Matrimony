@@ -47,15 +47,32 @@ const Chat = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const backendUrl = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000').replace('/api', '');
+    const rawUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = rawUrl.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+    
+    console.log('🔌 Attempting Socket.io connection to:', backendUrl);
+    
     const socket = io(backendUrl, {
       withCredentials: true,
-      transports: ['polling', 'websocket']
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000
     });
 
-    socket.emit('join', user.id);
+    socket.on('connect', () => {
+      console.log('✅ Socket connected successfully! ID:', socket.id);
+      // Join user room AFTER connection is established (critical!)
+      socket.emit('join', user.id);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('❌ Socket connection error:', err.message);
+    });
 
     socket.on('new_message', (msg) => {
+      console.log('📩 Received real-time message:', msg);
       const currentActiveChat = activeChatRef.current;
       if (currentActiveChat && (msg.sender_id === currentActiveChat.id || msg.receiver_id === currentActiveChat.id)) {
         setMessages((prev) => {
@@ -108,7 +125,11 @@ const Chat = () => {
         { receiver_id: activeChat.id, content: newMessage },
         { withCredentials: true }
       );
-      setMessages([...messages, data]);
+      // Use functional updater to avoid stale closure + dedup against socket event
+      setMessages(prev => {
+        if (prev.some(m => m.id === data.id)) return prev;
+        return [...prev, data];
+      });
       setNewMessage('');
     } catch (error) {
       toast.error('Failed to send message');
