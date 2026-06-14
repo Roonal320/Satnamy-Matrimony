@@ -7,7 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { ScrollArea } from '../components/ui/scroll-area';
 import axios from 'axios';
-import { ArrowLeft, Send, Lock, Check, CheckCheck, Pencil, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Send, Lock, Check, CheckCheck, Pencil, Trash2, X, Image, Smile, Reply } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { io } from 'socket.io-client';
@@ -40,6 +40,21 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Emoji & Photo Messaging state
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [lightboxPhoto, setLightboxPhoto] = useState(null);
+  const [replyingToMessage, setReplyingToMessage] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // Reporting state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   // Presence state
   const [onlineUsers, setOnlineUsers] = useState(new Set());
@@ -278,21 +293,132 @@ const Chat = () => {
     }
   };
 
+  const submitReport = async () => {
+    if (!activeChat || !reportReason) return;
+    setSubmittingReport(true);
+    try {
+      await axios.post(
+        `${API}/reports`,
+        {
+          reported_user_id: activeChat.id,
+          reason: reportReason,
+          details: reportDetails
+        },
+        { withCredentials: true }
+      );
+      toast.success(`Report submitted successfully. We will review it promptly.`);
+      setShowReportModal(false);
+      setReportReason('');
+      setReportDetails('');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to submit report. Please try again.');
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
+
+  const handleEmojiClick = (emoji) => {
+    setNewMessage(prev => prev + emoji);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image files are allowed');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Maximum photo size is 10MB');
+      return;
+    }
+
+    setSelectedFile(file);
+    setFilePreview(URL.createObjectURL(file));
+  };
+
+  const clearSelectedFile = () => {
+    if (filePreview) {
+      URL.revokeObjectURL(filePreview);
+    }
+    setSelectedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const startReply = (msg) => {
+    setReplyingToMessage(msg);
+    setContextMenu(null);
+  };
+
+  const cancelReply = () => {
+    setReplyingToMessage(null);
+  };
+
   // ═══════════════════════════════════════════════════════
   // ── Message Actions ──
   // ═══════════════════════════════════════════════════════
   const sendMessage = async () => {
-    if (!newMessage.trim() || !activeChat) return;
+    if (!activeChat) return;
+
+    const hasText = newMessage.trim().length > 0;
+    const hasPhoto = selectedFile !== null;
+    if (!hasText && !hasPhoto) return;
 
     // If we're in edit mode, update instead of sending new
     if (editingMessage) {
       return saveEdit();
     }
 
+    let uploadedImageUrl = null;
+
+    if (hasPhoto) {
+      setUploadingFile(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        const { data: uploadData } = await axios.post(
+          `${API}/messages/upload-photo`,
+          formData,
+          {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            withCredentials: true
+          }
+        );
+        uploadedImageUrl = uploadData.url;
+      } catch (error) {
+        console.error('Photo upload error:', error);
+        const errorDetail = error.response?.data?.detail || 'Failed to upload photo';
+        toast.error(errorDetail);
+        setUploadingFile(false);
+        return;
+      }
+    }
+
+    let replyPayload = null;
+    if (replyingToMessage) {
+      replyPayload = {
+        id: replyingToMessage.id,
+        content: replyingToMessage.content,
+        sender_id: replyingToMessage.sender_id,
+        image_url: replyingToMessage.image_url || null
+      };
+    }
+
     try {
       const { data } = await axios.post(
         `${API}/messages`,
-        { receiver_id: activeChat.id, content: newMessage },
+        { 
+          receiver_id: activeChat.id, 
+          content: newMessage.trim(),
+          image_url: uploadedImageUrl,
+          reply_to: replyPayload
+        },
         { withCredentials: true }
       );
       setMessages(prev => {
@@ -300,9 +426,14 @@ const Chat = () => {
         return [...prev, data];
       });
       setNewMessage('');
+      clearSelectedFile();
+      setReplyingToMessage(null);
+      setShowEmojiPicker(false);
       stopTypingEmit();
     } catch (error) {
       toast.error('Failed to send message');
+    } finally {
+      setUploadingFile(false);
     }
   };
 
@@ -377,13 +508,13 @@ const Chat = () => {
   const longPressTimerRef = useRef(null);
 
   const handleContextMenu = (e, msg) => {
-    if (msg.sender_id !== user?.id || msg.deleted) return;
+    if (msg.deleted) return;
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY, message: msg });
   };
 
   const handleTouchStart = (msg) => {
-    if (msg.sender_id !== user?.id || msg.deleted) return;
+    if (msg.deleted) return;
     longPressTimerRef.current = setTimeout(() => {
       // For mobile, position the menu near the center
       setContextMenu({ x: window.innerWidth / 2, y: window.innerHeight / 2, message: msg });
@@ -633,6 +764,16 @@ const Chat = () => {
                         >
                           Block User
                         </button>
+                        <button
+                          onClick={() => {
+                            setShowMenu(false);
+                            setShowReportModal(true);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-sm font-body hover:bg-orange-50 text-orange-600 font-semibold border-t"
+                          style={{ borderColor: 'var(--border)' }}
+                        >
+                          Report User
+                        </button>
                       </div>
                     )}
                   </div>
@@ -669,10 +810,39 @@ const Chat = () => {
                               <p className="break-words italic text-sm">🚫 This message was deleted</p>
                             ) : (
                               <>
-                                <p className="break-words">{msg.content}</p>
+                                {msg.reply_to && (
+                                  <div 
+                                    className="mb-2 p-2.5 rounded-lg text-left text-xs border-l-4"
+                                    style={{
+                                      background: isSender ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.05)',
+                                      color: isSender ? 'rgba(255, 255, 255, 0.9)' : 'var(--text-secondary)',
+                                      borderLeftColor: isSender ? 'rgba(255, 255, 255, 0.5)' : 'var(--primary)'
+                                    }}
+                                  >
+                                    <p className="font-bold mb-0.5">
+                                      {msg.reply_to.sender_id === user?.id ? 'You' : activeChat.name}
+                                    </p>
+                                    <p className="truncate opacity-80">
+                                      {msg.reply_to.image_url ? '📷 Photo' : msg.reply_to.content}
+                                    </p>
+                                  </div>
+                                )}
+                                {msg.image_url && (
+                                  <div 
+                                    className="mb-1.5 rounded-xl overflow-hidden cursor-pointer border border-black/5 max-w-full"
+                                    onClick={() => setLightboxPhoto(msg.image_url)}
+                                  >
+                                    <img 
+                                      src={msg.image_url} 
+                                      alt="Shared attachment" 
+                                      className="max-h-60 sm:max-h-72 w-full object-cover hover:scale-[1.02] active:scale-95 transition-all duration-200"
+                                    />
+                                  </div>
+                                )}
+                                {msg.content && <p className="break-words">{msg.content}</p>}
                                 {msg.edited && (
                                   <span
-                                    className="text-[10px] italic mr-1"
+                                    className="text-[10px] italic mr-1 mt-0.5 block"
                                     style={{ color: isSender ? 'rgba(255,255,255,0.6)' : 'var(--text-secondary)' }}
                                   >
                                     edited
@@ -718,7 +888,7 @@ const Chat = () => {
                 </ScrollArea>
 
                 {/* ── Message Input ── */}
-                <div className="p-4 sm:p-6 border-t" style={{ borderColor: 'var(--border)' }}>
+                <div className="p-4 sm:p-6 border-t relative" style={{ borderColor: 'var(--border)' }}>
                   {activeChat.is_mutual_match ? (
                     <>
                       {/* Edit mode banner */}
@@ -736,22 +906,136 @@ const Chat = () => {
                           </button>
                         </div>
                       )}
-                      <div className="flex gap-2 sm:gap-3">
+
+                      {/* File attachment preview */}
+                      {filePreview && (
+                        <div className="flex items-center gap-3 mb-3 p-2 rounded-xl relative border" style={{ background: 'var(--surface-secondary)', borderColor: 'var(--border)' }}>
+                          <div className="w-14 h-14 rounded-lg overflow-hidden border bg-white flex-shrink-0 relative">
+                            <img src={filePreview} className="w-full h-full object-cover" alt="Selected attachment" />
+                            {uploadingFile && (
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-body text-xs font-semibold text-gray-700 truncate">{selectedFile?.name}</p>
+                            <p className="font-body text-[10px] text-gray-400">{(selectedFile?.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </div>
+                          <button
+                            disabled={uploadingFile}
+                            onClick={clearSelectedFile}
+                            className="p-1.5 rounded-full bg-white/80 hover:bg-white text-gray-500 hover:text-red-500 transition-colors shadow-sm"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Replying to message preview */}
+                      {replyingToMessage && (
+                        <div className="flex items-center gap-3 mb-3 p-3 rounded-xl relative border-l-4 border-[var(--primary)]" style={{ background: 'var(--surface-secondary)', borderColor: 'var(--border)' }}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-body text-xs font-bold text-[var(--primary)]">
+                              Replying to {replyingToMessage.sender_id === user?.id ? 'you' : activeChat.name}
+                            </p>
+                            <p className="font-body text-sm text-gray-500 truncate mt-0.5">
+                              {replyingToMessage.image_url ? '📷 Photo' : replyingToMessage.content}
+                            </p>
+                          </div>
+                          <button
+                            onClick={cancelReply}
+                            className="p-1 rounded-full hover:bg-white/50 transition-colors"
+                          >
+                            <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Emoji Picker Popover */}
+                      {showEmojiPicker && (
+                        <div 
+                          className="absolute bottom-24 right-6 z-40 p-3 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border w-72"
+                          style={{ borderColor: 'var(--border)', animation: 'contextMenuAppear 0.15s ease-out' }}
+                        >
+                          <div className="flex items-center justify-between mb-2 pb-1 border-b" style={{ borderColor: 'var(--border)' }}>
+                            <span className="font-body text-xs font-bold text-gray-500">Pick an Emoji</span>
+                            <button onClick={() => setShowEmojiPicker(false)} className="text-gray-400 hover:text-gray-600">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto pr-1">
+                            {[
+                              '😀', '😂', '🤣', '😊', '😍', '🥰', 
+                              '😘', '😜', '🤔', '🤫', '🙄', '😬', 
+                              '😔', '😢', '😭', '😡', '🥺', '😱', 
+                              '👍', '👎', '❤️', '🔥', '🎉', '✨', 
+                              '👏', '🙌', '🙏', '💡', '💯', '🌟', 
+                              '🌹', '🍰', '🎈', '💖', '🎵', '☀️'
+                            ].map((emoji) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => handleEmojiClick(emoji)}
+                                className="h-9 w-9 text-xl flex items-center justify-center hover:bg-gray-100 active:scale-90 rounded-lg transition-all"
+                              >
+                                  {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 sm:gap-3 items-center relative">
+                        <button
+                          type="button"
+                          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                          className="p-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all text-gray-500 hover:text-amber-500 flex-shrink-0"
+                          title="Add emoji"
+                        >
+                          <Smile className="w-6 h-6" />
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="p-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all text-gray-500 hover:text-[var(--primary)] flex-shrink-0"
+                          title="Attach photo"
+                        >
+                          <Image className="w-6 h-6" />
+                        </button>
+                        
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                          accept="image/*"
+                          className="hidden"
+                        />
+
                         <Input
                           data-testid="message-input"
                           value={newMessage}
                           onChange={handleInputChange}
                           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                           placeholder={editingMessage ? 'Edit your message...' : 'Type a message...'}
-                          className="flex-1 h-12 font-body text-sm sm:text-base"
+                          className="flex-1 h-12 font-body text-sm sm:text-base rounded-full px-5 border-gray-200 focus:border-[var(--primary)]"
+                          disabled={uploadingFile}
                         />
                         <Button
                           data-testid="send-message-button"
                           onClick={sendMessage}
+                          disabled={uploadingFile}
                           className="h-12 w-12 sm:w-auto sm:px-6 rounded-full font-body text-white flex items-center justify-center flex-shrink-0"
                           style={{ background: editingMessage ? '#22C55E' : 'var(--primary)' }}
                         >
-                          {editingMessage ? <Check className="w-5 h-5" /> : <Send className="w-5 h-5" />}
+                          {uploadingFile ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : editingMessage ? (
+                            <Check className="w-5 h-5" />
+                          ) : (
+                            <Send className="w-5 h-5" />
+                          )}
                         </Button>
                       </div>
                     </>
@@ -784,13 +1068,13 @@ const Chat = () => {
         </div>
       </div>
 
-      {/* ────────────────── Context Menu (Edit/Delete) ────────────────── */}
+      {/* ────────────────── Context Menu (Reply/Edit/Delete) ────────────────── */}
       {contextMenu && (
         <div
           className="fixed z-50 bg-white rounded-xl shadow-2xl border overflow-hidden"
           style={{
             left: Math.min(contextMenu.x, window.innerWidth - 180),
-            top: Math.min(contextMenu.y, window.innerHeight - 120),
+            top: Math.min(contextMenu.y, window.innerHeight - 180),
             borderColor: 'var(--border)',
             minWidth: '160px'
           }}
@@ -799,19 +1083,143 @@ const Chat = () => {
           <button
             className="w-full flex items-center gap-3 px-4 py-3 font-body text-sm hover:bg-gray-50 transition-colors"
             style={{ color: 'var(--text-primary)' }}
-            onClick={() => startEdit(contextMenu.message)}
+            onClick={() => startReply(contextMenu.message)}
           >
-            <Pencil className="w-4 h-4" />
-            Edit message
+            <Reply className="w-4 h-4 text-gray-500" />
+            Reply
           </button>
-          <button
-            className="w-full flex items-center gap-3 px-4 py-3 font-body text-sm hover:bg-red-50 transition-colors"
-            style={{ color: 'var(--error)' }}
-            onClick={() => deleteMsg(contextMenu.message.id)}
+          {contextMenu.message.sender_id === user?.id && (
+            <>
+              <button
+                className="w-full flex items-center gap-3 px-4 py-3 font-body text-sm hover:bg-gray-50 transition-colors border-t"
+                style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}
+                onClick={() => startEdit(contextMenu.message)}
+              >
+                <Pencil className="w-4 h-4" />
+                Edit message
+              </button>
+              <button
+                className="w-full flex items-center gap-3 px-4 py-3 font-body text-sm hover:bg-red-50 transition-colors"
+                style={{ color: 'var(--error)' }}
+                onClick={() => deleteMsg(contextMenu.message.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete for everyone
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ────────────────── Lightbox Fullscreen Photo Preview ────────────────── */}
+      {lightboxPhoto && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxPhoto(null)}
+          style={{ animation: 'contextMenuAppear 0.2s ease-out' }}
+        >
+          <button 
+            onClick={() => setLightboxPhoto(null)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 bg-white/10 rounded-full transition-colors"
           >
-            <Trash2 className="w-4 h-4" />
-            Delete for everyone
+            <X className="w-6 h-6" />
           </button>
+          <img 
+            src={lightboxPhoto} 
+            alt="Fullscreen preview" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()} 
+          />
+        </div>
+      )}
+
+      {/* ────────────────── Report User Modal ────────────────── */}
+      {showReportModal && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4"
+          onClick={() => {
+            if (!submittingReport) setShowReportModal(false);
+          }}
+          style={{ animation: 'contextMenuAppear 0.2s ease-out' }}
+        >
+          <div 
+            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border"
+            style={{ borderColor: 'var(--border)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4 pb-2 border-b" style={{ borderColor: 'var(--border)' }}>
+              <h3 className="font-heading text-lg font-bold text-gray-900">Report User</h3>
+              <button 
+                disabled={submittingReport}
+                onClick={() => setShowReportModal(false)} 
+                className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4 font-body text-sm text-gray-700">
+              <p>Please select a reason for reporting <strong>{activeChat?.name}</strong>:</p>
+              
+              <div className="space-y-2">
+                {[
+                  'Abusive language or harassment',
+                  'Fake profile or inappropriate photo',
+                  'Scammer, spammer, or financial solicitation',
+                  'Misbehavior in messages or calls',
+                  'Other'
+                ].map((r) => (
+                  <label 
+                    key={r} 
+                    className={`flex items-center gap-3 p-2.5 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors ${reportReason === r ? 'border-[var(--primary)] bg-orange-50/20' : ''}`}
+                    style={{ borderColor: reportReason === r ? 'var(--primary)' : 'var(--border)' }}
+                  >
+                    <input 
+                      type="radio" 
+                      name="reportReason" 
+                      value={r}
+                      checked={reportReason === r}
+                      disabled={submittingReport}
+                      onChange={(e) => setReportReason(e.target.value)}
+                      className="text-[var(--primary)] focus:ring-[var(--primary)] h-4 w-4"
+                    />
+                    <span>{r}</span>
+                  </label>
+                ))}
+              </div>
+              
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-gray-500">Additional details (optional)</label>
+                <textarea
+                  value={reportDetails}
+                  disabled={submittingReport}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  placeholder="Please provide details about what happened..."
+                  className="w-full p-3 border rounded-xl font-body text-sm h-24 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                  style={{ borderColor: 'var(--border)' }}
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="ghost"
+                disabled={submittingReport}
+                onClick={() => setShowReportModal(false)}
+                className="flex-1 rounded-full h-11 border border-gray-200"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={submitReport}
+                disabled={!reportReason || submittingReport}
+                className="flex-1 rounded-full h-11 text-white"
+                style={{ background: 'var(--primary)' }}
+              >
+                {submittingReport ? 'Submitting...' : 'Submit Report'}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

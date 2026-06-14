@@ -30,10 +30,13 @@ function normalizeMessage(msg) {
 async function sendMessage(req, res) {
   try {
     const user = req.user;
-    const { receiver_id, content } = req.body;
+    const { receiver_id, content, image_url, reply_to } = req.body;
 
-    if (!receiver_id || !content) {
-      return res.status(422).json({ detail: "Missing receiver_id or content" });
+    if (!receiver_id) {
+      return res.status(422).json({ detail: "Missing receiver_id" });
+    }
+    if (!content && !image_url) {
+      return res.status(422).json({ detail: "Message must contain content or an image" });
     }
 
     // Check for block
@@ -65,7 +68,9 @@ async function sendMessage(req, res) {
       id: uuid.v4(),
       sender_id: user.id,
       receiver_id: receiver_id,
-      content: content,
+      content: content || '',
+      image_url: image_url || null,
+      reply_to: reply_to || null,
       read: false,
       status: initialStatus,
       created_at: new Date().toISOString()

@@ -8,7 +8,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import axios from 'axios';
-import { MapPin, Briefcase, GraduationCap, Heart, MessageCircle, ArrowLeft, Phone, User as UserIcon, Users, Lock, Crown, Camera, AlertCircle } from 'lucide-react';
+import { MapPin, Briefcase, GraduationCap, Heart, MessageCircle, ArrowLeft, Phone, User as UserIcon, Users, Lock, Crown, Camera, AlertCircle, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import Cropper from 'react-easy-crop';
@@ -32,6 +32,33 @@ const Profile = () => {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [showCropper, setShowCropper] = useState(false);
+
+  // Reporting States
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [submittingReport, setSubmittingReport] = useState(false);
+
+  // Edit Profile States
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [editProfileLoading, setEditProfileLoading] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    height: '',
+    weight: '',
+    marital_status: '',
+    caste: '',
+    mother_tongue: '',
+    education: '',
+    occupation: '',
+    income: '',
+    city: '',
+    state: '',
+    about: '',
+    family_type: '',
+    father_occupation: '',
+    mother_occupation: '',
+    siblings: ''
+  });
 
   // Password Recovery / Settings States
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -168,6 +195,75 @@ const Profile = () => {
       }
     } catch (err) {
       toast.error("Failed to unblock user");
+    }
+  };
+
+  const submitReport = async () => {
+    if (!profile || !reportReason) return;
+    setSubmittingReport(true);
+    try {
+      await axios.post(
+        `${API}/reports`,
+        {
+          reported_user_id: profile.id,
+          reason: reportReason,
+          details: reportDetails
+        },
+        { withCredentials: true }
+      );
+      toast.success(`Report submitted successfully. We will review it promptly.`);
+      setShowReportModal(false);
+      setReportReason('');
+      setReportDetails('');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to submit report. Please try again.');
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
+
+  const handleOpenEditProfileModal = () => {
+    if (profile) {
+      setEditFormData({
+        height: profile.height || '',
+        weight: profile.weight || '',
+        marital_status: profile.marital_status || '',
+        caste: profile.caste || '',
+        mother_tongue: profile.mother_tongue || '',
+        education: profile.education || '',
+        occupation: profile.occupation || '',
+        income: profile.income || '',
+        city: profile.city || '',
+        state: profile.state || '',
+        about: profile.about || '',
+        family_type: profile.family_type || '',
+        father_occupation: profile.father_occupation || '',
+        mother_occupation: profile.mother_occupation || '',
+        siblings: profile.siblings || ''
+      });
+    }
+    setShowEditProfileModal(true);
+  };
+
+  const handleEditFormChange = (name, value) => {
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditProfileSubmit = async (e) => {
+    e.preventDefault();
+    setEditProfileLoading(true);
+    try {
+      const { data } = await axios.put(`${API}/profile`, editFormData, { withCredentials: true });
+      toast.success('Profile updated successfully!');
+      setProfile(data);
+      if (updateUser) updateUser(data);
+      setShowEditProfileModal(false);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.detail || 'Failed to update profile. Please try again.');
+    } finally {
+      setEditProfileLoading(false);
     }
   };
 
@@ -379,10 +475,19 @@ const Profile = () => {
                         <Button
                           onClick={handleBlock}
                           variant="ghost"
-                          className="h-12 w-12 rounded-full p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-smooth"
+                          className="h-12 w-12 rounded-full p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-smooth flex-shrink-0"
                           title="Block User"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                        </Button>
+
+                        <Button
+                          onClick={() => setShowReportModal(true)}
+                          variant="ghost"
+                          className="h-12 w-12 rounded-full p-0 text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-smooth flex-shrink-0"
+                          title="Report User"
+                        >
+                          <AlertCircle className="w-5 h-5" />
                         </Button>
                       </div>
                     </>
@@ -548,6 +653,14 @@ const Profile = () => {
                 )}
 
                 <div className="flex flex-wrap gap-4">
+                  <Button
+                    onClick={handleOpenEditProfileModal}
+                    className="rounded-full font-body font-medium transition-smooth text-white"
+                    style={{ background: 'var(--primary)' }}
+                  >
+                    Edit Profile Details
+                  </Button>
+
                   <Button
                     onClick={() => setShowChangePasswordModal(true)}
                     variant="outline"
@@ -756,6 +869,336 @@ const Profile = () => {
                     Apply Crop
                   </Button>
                 </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Report User Modal */}
+            {showReportModal && (
+              <div 
+                className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4"
+                onClick={() => {
+                  if (!submittingReport) setShowReportModal(false);
+                }}
+                style={{ animation: 'contextMenuAppear 0.2s ease-out' }}
+              >
+                <div 
+                  className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border text-left"
+                  style={{ borderColor: 'var(--border)' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex justify-between items-center mb-4 pb-2 border-b" style={{ borderColor: 'var(--border)' }}>
+                    <h3 className="font-heading text-lg font-bold text-gray-900">Report User</h3>
+                    <button 
+                      disabled={submittingReport}
+                      onClick={() => setShowReportModal(false)} 
+                      className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-4 font-body text-sm text-gray-700">
+                    <p>Please select a reason for reporting <strong>{profile?.name}</strong>:</p>
+                    
+                    <div className="space-y-2">
+                      {[
+                        'Abusive language or harassment',
+                        'Fake profile or inappropriate photo',
+                        'Scammer, spammer, or financial solicitation',
+                        'Misbehavior in messages or calls',
+                        'Other'
+                      ].map((r) => (
+                        <label 
+                          key={r} 
+                          className={`flex items-center gap-3 p-2.5 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors ${reportReason === r ? 'border-[var(--primary)] bg-orange-50/20' : ''}`}
+                          style={{ borderColor: reportReason === r ? 'var(--primary)' : 'var(--border)' }}
+                        >
+                          <input 
+                            type="radio" 
+                            name="reportReason" 
+                            value={r}
+                            checked={reportReason === r}
+                            disabled={submittingReport}
+                            onChange={(e) => setReportReason(e.target.value)}
+                            className="text-[var(--primary)] focus:ring-[var(--primary)] h-4 w-4"
+                          />
+                          <span>{r}</span>
+                        </label>
+                      ))}
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-gray-500">Additional details (optional)</label>
+                      <textarea
+                        value={reportDetails}
+                        disabled={submittingReport}
+                        onChange={(e) => setReportDetails(e.target.value)}
+                        placeholder="Please provide details about what happened..."
+                        className="w-full p-3 border rounded-xl font-body text-sm h-24 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                        style={{ borderColor: 'var(--border)' }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3 mt-6">
+                    <Button
+                      variant="ghost"
+                      disabled={submittingReport}
+                      onClick={() => setShowReportModal(false)}
+                      className="flex-1 rounded-full h-11 border border-gray-200"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={submitReport}
+                      disabled={!reportReason || submittingReport}
+                      className="flex-1 rounded-full h-11 text-white"
+                      style={{ background: 'var(--primary)' }}
+                    >
+                      {submittingReport ? 'Submitting...' : 'Submit Report'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Edit Profile Dialog */}
+            <Dialog open={showEditProfileModal} onOpenChange={setShowEditProfileModal}>
+              <DialogContent className="max-w-[90vw] sm:max-w-2xl bg-white p-6 rounded-2xl border">
+                <DialogHeader>
+                  <DialogTitle className="font-heading text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    Edit Profile Information
+                  </DialogTitle>
+                  <DialogDescription className="font-body text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+                    Update your personal, professional, and family details below.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <form onSubmit={handleEditProfileSubmit} className="space-y-4">
+                  <div className="max-h-[55vh] overflow-y-auto pr-2 space-y-6">
+                    
+                    {/* Section 1: Personal Details */}
+                    <div>
+                      <h3 className="font-heading text-md font-bold text-gray-800 mb-3 border-b pb-1">Personal Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="edit-height" className="font-body text-xs text-gray-500">Height (cm)</Label>
+                          <Input
+                            id="edit-height"
+                            type="text"
+                            value={editFormData.height}
+                            onChange={(e) => handleEditFormChange('height', e.target.value)}
+                            placeholder="170"
+                            className="mt-1 h-11 font-body"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-weight" className="font-body text-xs text-gray-500">Weight (kg)</Label>
+                          <Input
+                            id="edit-weight"
+                            type="text"
+                            value={editFormData.weight}
+                            onChange={(e) => handleEditFormChange('weight', e.target.value)}
+                            placeholder="65"
+                            className="mt-1 h-11 font-body"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-marital-status" className="font-body text-xs text-gray-500">Marital Status</Label>
+                          <select
+                            id="edit-marital-status"
+                            value={editFormData.marital_status}
+                            onChange={(e) => handleEditFormChange('marital_status', e.target.value)}
+                            className="mt-1 w-full h-11 px-3 border rounded-xl font-body text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                            style={{ borderColor: 'var(--border)' }}
+                          >
+                            <option value="">Select status</option>
+                            <option value="Never Married">Never Married</option>
+                            <option value="Divorced">Divorced</option>
+                            <option value="Widowed">Widowed</option>
+                          </select>
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-caste" className="font-body text-xs text-gray-500">Caste/Sub-caste</Label>
+                          <Input
+                            id="edit-caste"
+                            type="text"
+                            value={editFormData.caste}
+                            onChange={(e) => handleEditFormChange('caste', e.target.value)}
+                            placeholder="Caste"
+                            className="mt-1 h-11 font-body"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-mother-tongue" className="font-body text-xs text-gray-500">Mother Tongue</Label>
+                          <Input
+                            id="edit-mother-tongue"
+                            type="text"
+                            value={editFormData.mother_tongue}
+                            onChange={(e) => handleEditFormChange('mother_tongue', e.target.value)}
+                            placeholder="Hindi"
+                            className="mt-1 h-11 font-body"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 2: Education & Career */}
+                    <div>
+                      <h3 className="font-heading text-md font-bold text-gray-800 mb-3 border-b pb-1">Education & Career</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="edit-education" className="font-body text-xs text-gray-500">Education</Label>
+                          <Input
+                            id="edit-education"
+                            type="text"
+                            value={editFormData.education}
+                            onChange={(e) => handleEditFormChange('education', e.target.value)}
+                            placeholder="Education"
+                            className="mt-1 h-11 font-body"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-occupation" className="font-body text-xs text-gray-500">Occupation</Label>
+                          <Input
+                            id="edit-occupation"
+                            type="text"
+                            value={editFormData.occupation}
+                            onChange={(e) => handleEditFormChange('occupation', e.target.value)}
+                            placeholder="Occupation"
+                            className="mt-1 h-11 font-body"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-income" className="font-body text-xs text-gray-500">Annual Income</Label>
+                          <select
+                            id="edit-income"
+                            value={editFormData.income}
+                            onChange={(e) => handleEditFormChange('income', e.target.value)}
+                            className="mt-1 w-full h-11 px-3 border rounded-xl font-body text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                            style={{ borderColor: 'var(--border)' }}
+                          >
+                            <option value="">Select range</option>
+                            <option value="Below 3 Lakhs">Below 3 Lakhs</option>
+                            <option value="3-5 Lakhs">3-5 Lakhs</option>
+                            <option value="5-7 Lakhs">5-7 Lakhs</option>
+                            <option value="7-10 Lakhs">7-10 Lakhs</option>
+                            <option value="10-15 Lakhs">10-15 Lakhs</option>
+                            <option value="15-20 Lakhs">15-20 Lakhs</option>
+                            <option value="Above 20 Lakhs">Above 20 Lakhs</option>
+                          </select>
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-city" className="font-body text-xs text-gray-500">City</Label>
+                          <Input
+                            id="edit-city"
+                            type="text"
+                            value={editFormData.city}
+                            onChange={(e) => handleEditFormChange('city', e.target.value)}
+                            placeholder="City"
+                            className="mt-1 h-11 font-body"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-state" className="font-body text-xs text-gray-500">State</Label>
+                          <Input
+                            id="edit-state"
+                            type="text"
+                            value={editFormData.state}
+                            onChange={(e) => handleEditFormChange('state', e.target.value)}
+                            placeholder="State"
+                            className="mt-1 h-11 font-body"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 3: Family & About */}
+                    <div>
+                      <h3 className="font-heading text-md font-bold text-gray-800 mb-3 border-b pb-1">Family & About</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="edit-family-type" className="font-body text-xs text-gray-500">Family Type</Label>
+                          <select
+                            id="edit-family-type"
+                            value={editFormData.family_type}
+                            onChange={(e) => handleEditFormChange('family_type', e.target.value)}
+                            className="mt-1 w-full h-11 px-3 border rounded-xl font-body text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                            style={{ borderColor: 'var(--border)' }}
+                          >
+                            <option value="">Select type</option>
+                            <option value="Nuclear">Nuclear</option>
+                            <option value="Joint">Joint</option>
+                          </select>
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-siblings" className="font-body text-xs text-gray-500">Siblings</Label>
+                          <Input
+                            id="edit-siblings"
+                            type="text"
+                            value={editFormData.siblings}
+                            onChange={(e) => handleEditFormChange('siblings', e.target.value)}
+                            placeholder="Siblings"
+                            className="mt-1 h-11 font-body"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-father-occupation" className="font-body text-xs text-gray-500">Father's Occupation</Label>
+                          <Input
+                            id="edit-father-occupation"
+                            type="text"
+                            value={editFormData.father_occupation}
+                            onChange={(e) => handleEditFormChange('father_occupation', e.target.value)}
+                            placeholder="Father's Occupation"
+                            className="mt-1 h-11 font-body"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-mother-occupation" className="font-body text-xs text-gray-500">Mother's Occupation</Label>
+                          <Input
+                            id="edit-mother-occupation"
+                            type="text"
+                            value={editFormData.mother_occupation}
+                            onChange={(e) => handleEditFormChange('mother_occupation', e.target.value)}
+                            placeholder="Mother's Occupation"
+                            className="mt-1 h-11 font-body"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <Label htmlFor="edit-about" className="font-body text-xs text-gray-500">About Yourself</Label>
+                          <textarea
+                            id="edit-about"
+                            value={editFormData.about}
+                            onChange={(e) => handleEditFormChange('about', e.target.value)}
+                            placeholder="Describe yourself..."
+                            rows={3}
+                            className="mt-1 w-full p-3 border rounded-xl font-body text-sm focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                            style={{ borderColor: 'var(--border)' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <DialogFooter className="gap-2 mt-6 flex-row justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setShowEditProfileModal(false)}
+                      className="rounded-full h-11 px-6 font-body"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={editProfileLoading}
+                      className="rounded-full h-11 px-6 text-white font-body"
+                      style={{ background: 'var(--primary)' }}
+                    >
+                      {editProfileLoading ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </DialogFooter>
+                </form>
               </DialogContent>
             </Dialog>
           </div>

@@ -18,7 +18,21 @@ const MessageSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true
+    required: false,
+    default: ""
+  },
+  image_url: {
+    type: String,
+    default: null
+  },
+  reply_to: {
+    type: {
+      id: String,
+      content: String,
+      sender_id: String,
+      image_url: String
+    },
+    default: null
   },
   // Legacy field — kept for backward compat with old documents
   read: {
