@@ -1,6 +1,28 @@
 const Message = require('../models/Message');
 const User = require('../models/User');
+const Match = require('../models/Match');
 const uuid = require('uuid');
+
+/**
+ * Helper: normalize a message object for API responses.
+ * Handles legacy `read` field → `status` migration.
+ */
+function normalizeMessage(msg) {
+  const obj = typeof msg.toObject === 'function' ? msg.toObject() : { ...msg };
+  delete obj._id;
+
+  // Legacy migration: if status is missing, derive from read boolean
+  if (!obj.status) {
+    obj.status = obj.read ? 'read' : 'sent';
+  }
+
+  // Ensure defaults for new fields
+  if (obj.edited === undefined) obj.edited = false;
+  if (obj.edited_at === undefined) obj.edited_at = null;
+  if (obj.deleted === undefined) obj.deleted = false;
+
+  return obj;
+}
 
 /**
  * Sends a message from the authenticated user to another user.
@@ -14,9 +36,30 @@ async function sendMessage(req, res) {
       return res.status(422).json({ detail: "Missing receiver_id or content" });
     }
 
-    if (!user.is_premium) {
-      return res.status(403).json({ detail: "Messaging is only available to premium subscribers" });
+    // Check for block
+    const block = await Match.findOne({
+      $or: [
+        { user_id: user.id, target_id: receiver_id, type: 'block' },
+        { user_id: receiver_id, target_id: user.id, type: 'block' }
+      ]
+    });
+    if (block) {
+      return res.status(403).json({ detail: "This user is unavailable (blocked)" });
     }
+
+    // Check if the user is mutual matched with the receiver
+    const [like1, like2] = await Promise.all([
+      Match.findOne({ user_id: user.id, target_id: receiver_id, type: 'like' }),
+      Match.findOne({ user_id: receiver_id, target_id: user.id, type: 'like' })
+    ]);
+    const isMutual = !!(like1 && like2);
+    if (!isMutual) {
+      return res.status(403).json({ detail: "You can only message mutual matches" });
+    }
+
+    // Check if receiver is online to set initial status
+    const isUserOnline = req.app.get('isUserOnline');
+    const initialStatus = (isUserOnline && isUserOnline(receiver_id)) ? 'delivered' : 'sent';
 
     const message = await Message.create({
       id: uuid.v4(),
@@ -24,11 +67,11 @@ async function sendMessage(req, res) {
       receiver_id: receiver_id,
       content: content,
       read: false,
+      status: initialStatus,
       created_at: new Date().toISOString()
     });
 
-    const msgObj = message.toObject();
-    delete msgObj._id;
+    const msgObj = normalizeMessage(message);
 
     const io = req.app.get('io');
     if (io) {
@@ -37,6 +80,91 @@ async function sendMessage(req, res) {
     }
 
     return res.status(200).json(msgObj);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ detail: "Internal server error" });
+  }
+}
+
+/**
+ * Edits a message. Only the sender can edit their own messages.
+ */
+async function editMessage(req, res) {
+  try {
+    const user = req.user;
+    const messageId = req.params.id;
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(422).json({ detail: "Content cannot be empty" });
+    }
+
+    const message = await Message.findOne({ id: messageId });
+    if (!message) {
+      return res.status(404).json({ detail: "Message not found" });
+    }
+
+    if (message.sender_id !== user.id) {
+      return res.status(403).json({ detail: "You can only edit your own messages" });
+    }
+
+    if (message.deleted) {
+      return res.status(400).json({ detail: "Cannot edit a deleted message" });
+    }
+
+    const editedAt = new Date().toISOString();
+    message.content = content.trim();
+    message.edited = true;
+    message.edited_at = editedAt;
+    await message.save();
+
+    const msgObj = normalizeMessage(message);
+
+    // Broadcast the edit to both sender and receiver in real-time
+    const io = req.app.get('io');
+    if (io) {
+      const editPayload = { id: messageId, content: msgObj.content, edited_at: editedAt };
+      io.to(message.receiver_id).emit('message_edited', editPayload);
+      io.to(message.sender_id).emit('message_edited', editPayload);
+    }
+
+    return res.status(200).json(msgObj);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ detail: "Internal server error" });
+  }
+}
+
+/**
+ * Deletes a message (soft delete). Only the sender can delete.
+ */
+async function deleteMessage(req, res) {
+  try {
+    const user = req.user;
+    const messageId = req.params.id;
+
+    const message = await Message.findOne({ id: messageId });
+    if (!message) {
+      return res.status(404).json({ detail: "Message not found" });
+    }
+
+    if (message.sender_id !== user.id) {
+      return res.status(403).json({ detail: "You can only delete your own messages" });
+    }
+
+    message.deleted = true;
+    message.content = '';
+    await message.save();
+
+    // Broadcast deletion to both sender and receiver
+    const io = req.app.get('io');
+    if (io) {
+      const deletePayload = { id: messageId };
+      io.to(message.receiver_id).emit('message_deleted', deletePayload);
+      io.to(message.sender_id).emit('message_deleted', deletePayload);
+    }
+
+    return res.status(200).json({ success: true, id: messageId });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ detail: "Internal server error" });
@@ -58,13 +186,40 @@ async function getMessages(req, res) {
       ]
     }, { _id: 0 }).sort({ created_at: 1 });
 
-    // Mark received messages as read
+    // Normalize all messages (handles legacy migration)
+    const normalized = messages.map(normalizeMessage);
+
+    // Mark received messages as read (using both legacy and new fields)
     await Message.updateMany(
-      { sender_id: otherUserId, receiver_id: user.id, read: false },
-      { $set: { read: true } }
+      {
+        sender_id: otherUserId,
+        receiver_id: user.id,
+        status: { $in: ['sent', 'delivered'] }
+      },
+      { $set: { read: true, status: 'read' } }
     );
 
-    return res.status(200).json(messages);
+    // Also handle legacy-only docs that only have read field
+    await Message.updateMany(
+      {
+        sender_id: otherUserId,
+        receiver_id: user.id,
+        read: false,
+        status: { $exists: false }
+      },
+      { $set: { read: true, status: 'read' } }
+    );
+
+    // Notify sender that their messages were read
+    const io = req.app.get('io');
+    if (io) {
+      io.to(otherUserId).emit('messages_read_ack', {
+        readerId: user.id,
+        readAt: new Date().toISOString()
+      });
+    }
+
+    return res.status(200).json(normalized);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ detail: "Internal server error" });
@@ -94,6 +249,37 @@ async function getConversations(req, res) {
       }
     }
 
+    // Add mutual matches to partnerIds
+    const mutualMatchSet = new Set();
+    const myLikes = await Match.find({ user_id: user.id, type: 'like' });
+    const myLikedIds = myLikes.map(m => m.target_id);
+    if (myLikedIds.length > 0) {
+      const reciprocals = await Match.find({
+        user_id: { $in: myLikedIds },
+        target_id: user.id,
+        type: 'like'
+      });
+      for (const r of reciprocals) {
+        mutualMatchSet.add(r.user_id);
+        partnerIds.add(r.user_id);
+      }
+    }
+
+    // Filter out blocked users
+    const blocks = await Match.find({
+      $or: [
+        { user_id: user.id, type: 'block' },
+        { target_id: user.id, type: 'block' }
+      ]
+    });
+    for (const b of blocks) {
+      const blockedId = b.user_id === user.id ? b.target_id : b.user_id;
+      partnerIds.delete(blockedId);
+    }
+
+    // Check online status helper
+    const isUserOnline = req.app.get('isUserOnline');
+
     const conversations = [];
     for (const partnerId of partnerIds) {
       const partner = await User.findOne(
@@ -110,16 +296,24 @@ async function getConversations(req, res) {
 
         const lastMsg = lastMsgList[0] || null;
 
+        // Count unread using both old and new fields
         const unreadCount = await Message.countDocuments({
           sender_id: partnerId,
           receiver_id: user.id,
-          read: false
+          $or: [
+            { status: { $in: ['sent', 'delivered'] } },
+            { read: false, status: { $exists: false } }
+          ]
         });
 
+        const partnerObj = partner.toObject();
+        partnerObj.is_online = isUserOnline ? isUserOnline(partnerId) : false;
+
         conversations.push({
-          partner: partner.toObject(),
-          last_message: lastMsg ? lastMsg.toObject() : null,
-          unread_count: unreadCount
+          partner: partnerObj,
+          last_message: lastMsg ? normalizeMessage(lastMsg) : null,
+          unread_count: unreadCount,
+          is_mutual_match: mutualMatchSet.has(partnerId)
         });
       }
     }
@@ -133,6 +327,8 @@ async function getConversations(req, res) {
 
 module.exports = {
   sendMessage,
+  editMessage,
+  deleteMessage,
   getMessages,
   getConversations
 };

@@ -10,9 +10,11 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",
     "@aws-sdk/s3-request-presigner": "^3.1053.0",
+    "@dodopayments/express": "^0.2.8",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "dodopayments": "^2.38.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "google-auth-library": "^10.6.2",
@@ -24,7 +26,7 @@
     "nodemailer": "^8.0.10",
     "resend": "^6.12.4",
     "socket.io": "^4.8.3",
-    "uuid": "^9.0.1"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

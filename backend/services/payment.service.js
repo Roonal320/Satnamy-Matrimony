@@ -1,36 +1,39 @@
-const crypto = require('crypto');
+const DodoPayments = require('dodopayments').default;
 
 /**
- * Generate a SHA512 hash for PayU order creation.
+ * Initialize Dodo Payments client.
+ * Uses DODO_PAYMENTS_API_KEY from environment and defaults to test_mode.
  */
-function generateOrderHash({ key, txnid, amount, productinfo, firstname, email, salt }) {
-  const udf1 = "";
-  const udf2 = "";
-  const udf3 = "";
-  const udf4 = "";
-  const udf5 = "";
-
-  const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}||||||${salt}`;
-  return crypto.createHash('sha512').update(hashString).digest('hex').toLowerCase();
-}
+const client = new DodoPayments({
+  bearerToken: process.env.DODO_PAYMENTS_API_KEY || '',
+  environment: process.env.DODO_PAYMENTS_ENV || 'test_mode',
+});
 
 /**
- * Verify a callback SHA512 hash returned by PayU redirect.
+ * Create a Dodo Payments checkout session for a given product.
+ * @param {Object} params
+ * @param {string} params.productId - The Dodo product ID
+ * @param {number} params.quantity - Quantity (default 1)
+ * @param {string} params.customerEmail - Customer email
+ * @param {string} params.customerName - Customer name
+ * @param {string} params.returnUrl - URL to redirect after payment
+ * @returns {Promise<Object>} - The checkout session with session_id and checkout_url
  */
-function verifyCallbackHash({ salt, status, email, firstname, productinfo, amount, txnid, key, returnedHash, body }) {
-  const udf1 = body.udf1 || "";
-  const udf2 = body.udf2 || "";
-  const udf3 = body.udf3 || "";
-  const udf4 = body.udf4 || "";
-  const udf5 = body.udf5 || "";
+async function createCheckoutSession({ productId, quantity = 1, customerEmail, customerName, returnUrl }) {
+  const session = await client.checkoutSessions.create({
+    product_cart: [{ product_id: productId, quantity }],
+    customer: {
+      email: customerEmail,
+      name: customerName,
+    },
+    payment_link: true,
+    return_url: returnUrl,
+  });
 
-  const hashString = `${salt}|${status}||||||${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
-  const calculatedHash = crypto.createHash('sha512').update(hashString).digest('hex').toLowerCase();
-
-  return calculatedHash === returnedHash;
+  return session;
 }
 
 module.exports = {
-  generateOrderHash,
-  verifyCallbackHash
+  client,
+  createCheckoutSession
 };

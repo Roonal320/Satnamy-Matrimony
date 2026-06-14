@@ -71,7 +71,7 @@ const TermsAndConditions = () => {
               We offer both free (basic) and premium (paid) subscriptions. The features and pricing of each plan are detailed on our Premium page.
             </p>
             <p>
-              Payments are processed securely via the PayU gateway. We do not store card details, net banking credentials, or UPI PINs on our servers. All premium memberships are one-time payments for a fixed duration. They do not auto-renew; you must manually renew your subscription when it expires.
+              Payments are processed securely via the Dodo Payments gateway. We do not store card details, net banking credentials, or UPI PINs on our servers. All premium memberships are one-time payments for a fixed duration. They do not auto-renew; you must manually renew your subscription when it expires.
             </p>
             <p>
               All purchases are subject to our <strong>Return & Refund Policy</strong>.

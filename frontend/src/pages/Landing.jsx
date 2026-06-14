@@ -26,6 +26,10 @@ const Landing = () => {
   const [activeTab, setActiveTab] = useState(tabParam === 'viewers' ? 'viewers' : 'discover');
   const [viewers, setViewers] = useState([]);
   const [viewersLoading, setViewersLoading] = useState(false);
+  const [matches, setMatches] = useState([]);
+  const [matchesLoading, setMatchesLoading] = useState(false);
+  const [likedUserIds, setLikedUserIds] = useState(new Set());
+  const [mutualMatchIds, setMutualMatchIds] = useState(new Set());
 
   useEffect(() => {
     if (tabParam === 'viewers') {
@@ -38,8 +42,24 @@ const Landing = () => {
   useEffect(() => {
     if (!authLoading) {
       fetchProfiles();
+      if (user) {
+        fetchLikesAndMatchesInfo();
+      }
     }
   }, [authLoading, user]);
+
+  const fetchLikesAndMatchesInfo = async () => {
+    try {
+      const [likesRes, matchesRes] = await Promise.all([
+        axios.get(`${API}/match/likes-sent`, { withCredentials: true }),
+        axios.get(`${API}/match/matches`, { withCredentials: true })
+      ]);
+      setLikedUserIds(new Set(likesRes.data.map(u => u.id)));
+      setMutualMatchIds(new Set(matchesRes.data.map(u => u.id)));
+    } catch (err) {
+      console.error("Error fetching match info:", err);
+    }
+  };
 
   const fetchProfiles = async () => {
     try {
@@ -76,11 +96,80 @@ const Landing = () => {
     }
   };
 
+  const fetchMatches = async () => {
+    try {
+      setMatchesLoading(true);
+      const { data } = await axios.get(`${API}/match/matches`, { withCredentials: true });
+      setMatches(data);
+    } catch (error) {
+      console.error('Failed to fetch matches:', error);
+    } finally {
+      setMatchesLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'viewers' && user?.is_premium) {
       fetchViewers();
+    } else if (activeTab === 'matches' && user) {
+      fetchMatches();
     }
   }, [activeTab, user]);
+
+  const handleLike = async (e, targetId) => {
+    e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    try {
+      const { data } = await axios.post(`${API}/match/like`, { target_id: targetId }, { withCredentials: true });
+      if (data.success) {
+        if (data.is_mutual_match) {
+          alert("🎉 It's a match!");
+        }
+        fetchLikesAndMatchesInfo();
+        if (activeTab === 'matches') {
+          fetchMatches();
+        }
+      }
+    } catch (err) {
+      console.error("Failed to like user:", err);
+    }
+  };
+
+  const handleUnlike = async (e, targetId) => {
+    e.stopPropagation();
+    try {
+      const { data } = await axios.post(`${API}/match/unlike`, { target_id: targetId }, { withCredentials: true });
+      if (data.success) {
+        fetchLikesAndMatchesInfo();
+        if (activeTab === 'matches') {
+          fetchMatches();
+        }
+      }
+    } catch (err) {
+      console.error("Failed to unlike user:", err);
+    }
+  };
+
+  const handleBlock = async (e, targetId) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to block this user?")) {
+      try {
+        const { data } = await axios.post(`${API}/match/block`, { target_id: targetId }, { withCredentials: true });
+        if (data.success) {
+          fetchLikesAndMatchesInfo();
+          fetchProfiles();
+          if (activeTab === 'matches') {
+            fetchMatches();
+          }
+        }
+      } catch (err) {
+        console.error("Failed to block user:", err);
+      }
+    }
+  };
 
   const getCardStyle = (p) => {
     if (!p.is_premium) return { border: '1px solid var(--border)' };
@@ -310,10 +399,10 @@ const Landing = () => {
             </div>
             <div className="text-center sm:text-left">
               <h4 className="font-heading font-bold text-base text-[var(--primary)]">
-                {user ? '🎉 6 Months Free Premium Active!' : '🎉 Special Offer: 6 Months Free Premium!'}
+                {user?.premium_plan === 'gold_6' ? '🎉 6 Months Free Gold Membership Active!' : '🎉 Free 6 Months Gold Membership!'}
               </h4>
               <p className="font-body text-xs text-[var(--text-secondary)]">
-                To celebrate our launch, all premium features (unlimited messaging, viewing contact details, seeing visitors) are <strong>100% free for everyone for the first 6 months</strong>.
+                Every user who registers until the end of this year (December 31, 2026) gets a <strong>free Gold membership for 6 months</strong> automatically activated!
               </p>
             </div>
           </div>
@@ -336,6 +425,16 @@ const Landing = () => {
             >
               {t('discover.title') || 'Discover Matches'}
               {activeTab === 'discover' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: 'var(--primary)' }} />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('matches')}
+              className={`pb-3 font-heading font-semibold text-lg relative transition-all ${activeTab === 'matches' ? 'text-primary font-bold' : 'text-gray-400'}`}
+              style={{ color: activeTab === 'matches' ? 'var(--primary)' : undefined }}
+            >
+              My Matches
+              {activeTab === 'matches' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: 'var(--primary)' }} />
               )}
             </button>
@@ -451,6 +550,43 @@ const Landing = () => {
                           </span>
                         </div>
                       )}
+                      {user && user.id !== profile.id && (
+                        <div className="flex gap-2 pt-2 mt-2 border-t border-gray-100 justify-end items-center">
+                          <button
+                            onClick={(e) => handleBlock(e, profile.id)}
+                            className="p-1.5 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                            title="Block User"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                          </button>
+                          {mutualMatchIds.has(profile.id) ? (
+                            <button
+                              onClick={(e) => handleUnlike(e, profile.id)}
+                              className="px-3 py-1 text-xs rounded-full font-semibold border border-pink-500 text-pink-500 hover:bg-pink-50 flex items-center gap-1 transition-colors"
+                              title="You are matched! Click to Unmatch."
+                            >
+                              <span>Matched ✓</span>
+                            </button>
+                          ) : likedUserIds.has(profile.id) ? (
+                            <button
+                              onClick={(e) => handleUnlike(e, profile.id)}
+                              className="px-3 py-1 text-xs rounded-full font-semibold bg-pink-500 text-white hover:bg-pink-600 flex items-center gap-1 transition-colors"
+                              title="Click to Unlike"
+                            >
+                              <Heart className="w-3.5 h-3.5 fill-current text-white" />
+                              <span>Liked</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={(e) => handleLike(e, profile.id)}
+                              className="px-3 py-1 text-xs rounded-full font-semibold border border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-white flex items-center gap-1 transition-colors"
+                            >
+                              <Heart className="w-3.5 h-3.5" />
+                              <span>Like</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -548,6 +684,117 @@ const Landing = () => {
               ))}
             </div>
           )
+        )}
+
+        {/* Matches Grid */}
+        {user && activeTab === 'matches' && (
+          <>
+            <div className="mb-6 sm:mb-8">
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3" style={{ color: 'var(--text-primary)' }}>
+                <Heart className="w-6 h-6 sm:w-8 sm:h-8 fill-current text-pink-500" style={{ color: 'var(--primary)' }} />
+                <span className="text-xl sm:text-3xl">My Mutual Matches</span>
+              </h2>
+            </div>
+
+            {matchesLoading ? (
+              <div className="text-center py-16 sm:py-20">
+                <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-t-4 border-b-4 mx-auto" style={{ borderColor: 'var(--primary)' }}></div>
+                <p className="mt-4 font-body text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>Loading matches...</p>
+              </div>
+            ) : matches.length === 0 ? (
+              <div className="text-center py-16 sm:py-20 bg-white rounded-2xl border" style={{ borderColor: 'var(--border)' }}>
+                <p className="font-body text-base sm:text-lg" style={{ color: 'var(--text-secondary)' }}>No mutual matches yet. Keep liking profiles to find a match!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+                {matches.map((profile) => (
+                  <div
+                    key={profile.id}
+                    data-testid={`profile-card-${profile.id}`}
+                    onClick={() => handleProfileClick(profile.id)}
+                    className="profile-card bg-white rounded-2xl overflow-hidden cursor-pointer transition-smooth animate-fade-in"
+                    style={getCardStyle(profile)}
+                  >
+                    <div className="relative aspect-[3/4] sm:aspect-[4/5]">
+                      <img
+                        src={getImageUrl(profile.profile_photo)}
+                        alt={profile.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Crect width='400' height='500' fill='%23f0e8f0'/%3E%3Ccircle cx='200' cy='180' r='80' fill='%23c9a0c9'/%3E%3Cellipse cx='200' cy='420' rx='130' ry='110' fill='%23c9a0c9'/%3E%3Ctext x='200' y='490' font-family='Arial' font-size='22' fill='%23888' text-anchor='middle'%3ENo Photo%3C/text%3E%3C/svg%3E`;
+                        }}
+                      />
+                      {profile.is_premium && (
+                        <div
+                          className="absolute top-2 right-2 px-2 py-1 rounded-full flex items-center gap-1"
+                          style={{ background: 'var(--secondary)', color: 'white' }}
+                        >
+                          <Crown className="w-3 h-3" />
+                          <span className="text-xs font-body font-medium hidden sm:inline">{t('landing.premium')}</span>
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 hero-overlay">
+                        <h3 className="font-heading text-base sm:text-xl md:text-2xl font-semibold text-white mb-0.5 sm:mb-1 truncate">
+                          {profile.name}
+                        </h3>
+                        <p className="font-body text-xs sm:text-sm text-white/90">
+                          {profile.date_of_birth && `${calculateAge(profile.date_of_birth)} ${t('landing.years')}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-2 sm:p-3 md:p-4 space-y-1 sm:space-y-2">
+                      {profile.city && (
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: 'var(--text-secondary)' }} />
+                          <span className="font-body text-xs sm:text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
+                            {profile.city}, {profile.state}
+                          </span>
+                        </div>
+                      )}
+                      {profile.occupation && (
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: 'var(--text-secondary)' }} />
+                          <span className="font-body text-xs sm:text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
+                            {profile.occupation}
+                          </span>
+                        </div>
+                      )}
+                      
+                      <div className="flex gap-2 pt-2 mt-2 border-t border-gray-100 justify-between items-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/chat?user=${profile.id}`);
+                          }}
+                          className="px-3 py-1.5 text-xs rounded-full bg-blue-500 hover:bg-blue-600 text-white font-semibold flex items-center gap-1 transition-colors"
+                        >
+                          Message
+                        </button>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={(e) => handleBlock(e, profile.id)}
+                            className="p-1.5 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                            title="Block User"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                          </button>
+                          <button
+                            onClick={(e) => handleUnlike(e, profile.id)}
+                            className="px-2 py-1 text-xs rounded-full font-semibold border border-red-500 text-red-500 hover:bg-red-50 transition-colors"
+                            title="Click to Unmatch"
+                          >
+                            Unmatch
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {/* CTA Section */}

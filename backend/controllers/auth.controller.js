@@ -81,6 +81,25 @@ async function register(req, res) {
     const userId = uuid.v4();
     const passwordHash = await cryptoUtils.hashPassword(password);
 
+    // Calculate free Gold promo (active until Dec 31, 2026)
+    const now = new Date();
+    const isPromoActive = now < new Date('2027-01-01T00:00:00Z');
+    let isPremium = false;
+    let premiumPlan = null;
+    let premiumName = null;
+    let premiumUntil = null;
+    let premiumFeatures = [];
+
+    if (isPromoActive) {
+      const gold6Months = new Date();
+      gold6Months.setMonth(gold6Months.getMonth() + 6);
+      isPremium = true;
+      premiumPlan = 'gold_6';
+      premiumName = 'Gold';
+      premiumUntil = gold6Months.toISOString();
+      premiumFeatures = ["unlimited_messaging", "view_contacts", "profile_boost"];
+    }
+
     const newUser = await User.create({
       id: userId,
       email: emailLower,
@@ -91,8 +110,11 @@ async function register(req, res) {
       gender,
       date_of_birth,
       profile_photo: null,
-      is_premium: false,
-      premium_until: null,
+      is_premium: isPremium,
+      premium_plan: premiumPlan,
+      premium_name: premiumName,
+      premium_until: premiumUntil,
+      premium_features: premiumFeatures,
       profile_completed: false,
       created_at: new Date().toISOString(),
       height: null,
@@ -122,19 +144,14 @@ async function register(req, res) {
     const userResponse = newUser.toObject();
     delete userResponse.password_hash;
     delete userResponse._id;
-    userResponse.is_premium = true;
-    userResponse.premium_plan = 'platinum_12';
-    userResponse.premium_name = 'Platinum';
-    userResponse.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-    userResponse.premium_features = [
-      'Unlimited Messaging',
-      'View Contact Details',
-      'Profile Boost (Unlimited)',
-      'Bold Listing in Search',
-      'Top Spotlight Profile',
-      'Personal Matchmaker',
-      'Priority Support 24/7'
-    ];
+    
+    // Respect the actual dynamic fields we saved
+    const isUserPremium = userResponse.is_premium && userResponse.premium_until && new Date(userResponse.premium_until) > new Date();
+    userResponse.is_premium = isUserPremium;
+    userResponse.premium_plan = isUserPremium ? userResponse.premium_plan : null;
+    userResponse.premium_name = isUserPremium ? userResponse.premium_name : null;
+    userResponse.premium_until = isUserPremium ? userResponse.premium_until : null;
+    userResponse.premium_features = isUserPremium ? userResponse.premium_features : [];
 
     return res.status(200).json(userResponse);
   } catch (err) {
@@ -179,19 +196,12 @@ async function login(req, res) {
     const userResponse = user.toObject();
     delete userResponse.password_hash;
     delete userResponse._id;
-    userResponse.is_premium = true;
-    userResponse.premium_plan = 'platinum_12';
-    userResponse.premium_name = 'Platinum';
-    userResponse.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-    userResponse.premium_features = [
-      'Unlimited Messaging',
-      'View Contact Details',
-      'Profile Boost (Unlimited)',
-      'Bold Listing in Search',
-      'Top Spotlight Profile',
-      'Personal Matchmaker',
-      'Priority Support 24/7'
-    ];
+    const isPremium = userResponse.is_premium && userResponse.premium_until && new Date(userResponse.premium_until) > new Date();
+    userResponse.is_premium = isPremium;
+    userResponse.premium_plan = isPremium ? userResponse.premium_plan : null;
+    userResponse.premium_name = isPremium ? userResponse.premium_name : null;
+    userResponse.premium_until = isPremium ? userResponse.premium_until : null;
+    userResponse.premium_features = isPremium ? userResponse.premium_features : [];
 
     return res.status(200).json(userResponse);
   } catch (err) {
@@ -246,19 +256,12 @@ async function googleAuth(req, res) {
       const userResponse = user.toObject();
       delete userResponse.password_hash;
       delete userResponse._id;
-      userResponse.is_premium = true;
-      userResponse.premium_plan = 'platinum_12';
-      userResponse.premium_name = 'Platinum';
-      userResponse.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-      userResponse.premium_features = [
-        'Unlimited Messaging',
-        'View Contact Details',
-        'Profile Boost (Unlimited)',
-        'Bold Listing in Search',
-        'Top Spotlight Profile',
-        'Personal Matchmaker',
-        'Priority Support 24/7'
-      ];
+      const isPremium = userResponse.is_premium && userResponse.premium_until && new Date(userResponse.premium_until) > new Date();
+      userResponse.is_premium = isPremium;
+      userResponse.premium_plan = isPremium ? userResponse.premium_plan : null;
+      userResponse.premium_name = isPremium ? userResponse.premium_name : null;
+      userResponse.premium_until = isPremium ? userResponse.premium_until : null;
+      userResponse.premium_features = isPremium ? userResponse.premium_features : [];
 
       return res.status(200).json(userResponse);
     }
@@ -319,6 +322,25 @@ async function googleRegister(req, res) {
 
     const userId = uuid.v4();
 
+    // Calculate free Gold promo (active until Dec 31, 2026)
+    const now = new Date();
+    const isPromoActive = now < new Date('2027-01-01T00:00:00Z');
+    let isPremium = false;
+    let premiumPlan = null;
+    let premiumName = null;
+    let premiumUntil = null;
+    let premiumFeatures = [];
+
+    if (isPromoActive) {
+      const gold6Months = new Date();
+      gold6Months.setMonth(gold6Months.getMonth() + 6);
+      isPremium = true;
+      premiumPlan = 'gold_6';
+      premiumName = 'Gold';
+      premiumUntil = gold6Months.toISOString();
+      premiumFeatures = ["unlimited_messaging", "view_contacts", "profile_boost"];
+    }
+
     const newUser = await User.create({
       id: userId,
       email: emailLower,
@@ -330,8 +352,11 @@ async function googleRegister(req, res) {
       gender,
       date_of_birth,
       profile_photo: picture || null,
-      is_premium: false,
-      premium_until: null,
+      is_premium: isPremium,
+      premium_plan: premiumPlan,
+      premium_name: premiumName,
+      premium_until: premiumUntil,
+      premium_features: premiumFeatures,
       profile_completed: false,
       created_at: new Date().toISOString(),
       height: null,
@@ -360,19 +385,14 @@ async function googleRegister(req, res) {
     const userResponse = newUser.toObject();
     delete userResponse.password_hash;
     delete userResponse._id;
-    userResponse.is_premium = true;
-    userResponse.premium_plan = 'platinum_12';
-    userResponse.premium_name = 'Platinum';
-    userResponse.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-    userResponse.premium_features = [
-      'Unlimited Messaging',
-      'View Contact Details',
-      'Profile Boost (Unlimited)',
-      'Bold Listing in Search',
-      'Top Spotlight Profile',
-      'Personal Matchmaker',
-      'Priority Support 24/7'
-    ];
+    
+    // Respect the actual dynamic fields we saved
+    const isUserPremium = userResponse.is_premium && userResponse.premium_until && new Date(userResponse.premium_until) > new Date();
+    userResponse.is_premium = isUserPremium;
+    userResponse.premium_plan = isUserPremium ? userResponse.premium_plan : null;
+    userResponse.premium_name = isUserPremium ? userResponse.premium_name : null;
+    userResponse.premium_until = isUserPremium ? userResponse.premium_until : null;
+    userResponse.premium_features = isUserPremium ? userResponse.premium_features : [];
 
     return res.status(200).json(userResponse);
   } catch (err) {

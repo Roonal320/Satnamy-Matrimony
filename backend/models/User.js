@@ -48,36 +48,23 @@ const UserSchema = new mongoose.Schema({
   },
   is_premium: {
     type: Boolean,
-    default: true,
-    get: () => true
+    default: false
   },
   premium_plan: {
     type: String,
-    default: 'platinum_12',
-    get: () => 'platinum_12'
+    default: null
   },
   premium_name: {
     type: String,
-    default: 'Platinum',
-    get: () => 'Platinum'
+    default: null
   },
   premium_features: {
     type: [String],
-    default: [],
-    get: () => [
-      'Unlimited Messaging',
-      'View Contact Details',
-      'Profile Boost (Unlimited)',
-      'Bold Listing in Search',
-      'Top Spotlight Profile',
-      'Personal Matchmaker',
-      'Priority Support 24/7'
-    ]
+    default: []
   },
   premium_until: {
     type: String,
-    default: null,
-    get: () => new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString()
+    default: null
   },
   profile_completed: {
     type: Boolean,

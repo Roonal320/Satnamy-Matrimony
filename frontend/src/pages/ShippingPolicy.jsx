@@ -87,7 +87,7 @@ const ShippingPolicy = () => {
           <Section title="4. Troubleshooting Activation Issues">
             <p>In rare situations, premium service delivery may be delayed due to:</p>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Delays in payment status callbacks from the PayU gateway.</li>
+              <li>Delays in payment status callbacks from the Dodo Payments gateway.</li>
               <li>Bank-side transaction clearance processing times.</li>
               <li>Temporary server maintenance windows.</li>
             </ul>

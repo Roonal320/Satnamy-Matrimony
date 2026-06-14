@@ -20,7 +20,26 @@ const MessageSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // Legacy field — kept for backward compat with old documents
   read: {
+    type: Boolean,
+    default: false
+  },
+  // New delivery status: 'sent' → 'delivered' → 'read'
+  status: {
+    type: String,
+    enum: ['sent', 'delivered', 'read'],
+    default: 'sent'
+  },
+  edited: {
+    type: Boolean,
+    default: false
+  },
+  edited_at: {
+    type: String,
+    default: null
+  },
+  deleted: {
     type: Boolean,
     default: false
   },

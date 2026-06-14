@@ -52,7 +52,7 @@ const Premium = () => {
       tagline: 'Start Connecting',
       color: '#D4AF37',
       gradient: 'linear-gradient(135deg, #D4AF37 0%, #B8941F 100%)',
-      prices: { '1': 500, '3': 1200, '6': 2000, '12': 3000 },
+      prices: { '1': 499, '3': 999, '6': 1499, '12': 1999 },
       features: [
         { icon: <MessageCircle className="w-4 h-4" />, text: 'Unlimited Messaging' },
         { icon: <Eye className="w-4 h-4" />, text: 'View Contact Details' },
@@ -68,7 +68,7 @@ const Premium = () => {
       color: '#6C63FF',
       gradient: 'linear-gradient(135deg, #6C63FF 0%, #4B47B3 100%)',
       popular: true,
-      prices: { '1': 1000, '3': 2400, '6': 4000, '12': 6000 },
+      prices: { '1': 999, '3': 1999, '6': 2999, '12': 3999 },
       features: [
         { icon: <MessageCircle className="w-4 h-4" />, text: 'Unlimited Messaging' },
         { icon: <Eye className="w-4 h-4" />, text: 'View Contact Details' },
@@ -84,7 +84,7 @@ const Premium = () => {
       tagline: 'VIP Experience',
       color: '#1F1A17',
       gradient: 'linear-gradient(135deg, #1F1A17 0%, #3D3530 100%)',
-      prices: { '1': 1500, '3': 3900, '6': 6000, '12': 9900 },
+      prices: { '1': 1499, '3': 2999, '6': 4499, '12': 5999 },
       features: [
         { icon: <MessageCircle className="w-4 h-4" />, text: 'Unlimited Messaging' },
         { icon: <Eye className="w-4 h-4" />, text: 'View Contact Details' },
@@ -107,11 +107,17 @@ const Premium = () => {
   ];
 
   const handleSubscribe = async (tier) => {
-    toast.info("All premium features are already unlocked under the 6-month free launch promotion!");
-    return;
+    // Comment out launch promotion block during testing
+    // toast.info("All premium features are already unlocked under the 6-month free launch promotion!");
+    // return;
+
+    const planKey = `${tier.id}_${selectedDuration}`;
+    const price = tier.prices[selectedDuration];
+
+    setLoading(planKey);
 
     try {
-      const { data: order } = await axios.post(
+      const { data } = await axios.post(
         `${API}/premium/create-order`,
         { 
           plan: planKey, 
@@ -121,38 +127,16 @@ const Premium = () => {
         { withCredentials: true }
       );
 
-      // Create dynamic HTML form and submit to PayU Hosted Checkout URL
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = order.payu_url;
-
-      const fields = {
-        key: order.key,
-        txnid: order.txnid,
-        amount: order.amount,
-        productinfo: order.productinfo,
-        firstname: order.firstname,
-        email: order.email,
-        phone: order.phone,
-        surl: order.surl,
-        furl: order.furl,
-        hash: order.hash,
-        service_provider: 'payu_paisa'
-      };
-
-      for (const [name, value] of Object.entries(fields)) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = name;
-        input.value = value || '';
-        form.appendChild(input);
+      // Redirect to Dodo Payments hosted checkout page
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      } else {
+        toast.error('Failed to get checkout URL');
       }
-
-      document.body.appendChild(form);
-      form.submit();
     } catch (error) {
       console.error("Payment error:", error);
-      toast.error('Failed to initiate payment');
+      const msg = error.response?.data?.detail || 'Failed to initiate payment';
+      toast.error(msg);
     } finally {
       setLoading(null);
     }
@@ -193,10 +177,10 @@ const Premium = () => {
             </span>
           </div>
           <h2 className="font-heading text-xl sm:text-2xl font-bold mb-2 text-[var(--text-primary)]">
-            Enjoy 6 Months of Free Premium!
+            Enjoy 6 Months of Free Gold Membership!
           </h2>
           <p className="font-body text-xs sm:text-sm text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed">
-            To celebrate our launch and support the Satnami community, all premium features—including unlimited messaging, viewing contact details, and spotlight listings—are <strong>100% free for everyone for the first 6 months</strong>. After this period, premium features will require a subscription. Enjoy connecting with matches!
+            To support the Satnami community, every user who registers on our platform before the end of this year (until December 31, 2026) receives a **free Gold membership of 6 months** automatically. Enjoy connecting and matching with members!
           </p>
         </div>
 
@@ -312,13 +296,14 @@ const Premium = () => {
                 {/* CTA Button */}
                 <Button
                   data-testid={`subscribe-${tier.id}-button`}
-                  disabled={true}
-                  className="w-full h-11 sm:h-12 md:h-14 rounded-full font-body font-medium text-sm sm:text-base text-white opacity-90 cursor-default shadow-md"
+                  disabled={loading === `${tier.id}_${selectedDuration}`}
+                  onClick={() => handleSubscribe(tier)}
+                  className="w-full h-11 sm:h-12 md:h-14 rounded-full font-body font-medium text-sm sm:text-base text-white shadow-md transition-smooth hover:scale-[1.02]"
                   style={{
-                    background: 'var(--success)',
+                    background: 'var(--primary)',
                   }}
                 >
-                  Active (Free Launch Offer)
+                  {loading === `${tier.id}_${selectedDuration}` ? 'Loading Checkout...' : `Subscribe to ${tier.name}`}
                 </Button>
               </div>
             </div>

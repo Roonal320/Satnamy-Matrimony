@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const View = require('../models/View');
 const Message = require('../models/Message');
+const Match = require('../models/Match');
 const profileService = require('../services/profile.service');
 const authService = require('../services/auth.service');
 const path = require('path');
@@ -38,19 +39,12 @@ async function updateProfile(req, res) {
     const userObj = updatedUser.toObject();
     delete userObj.password_hash;
     delete userObj._id;
-    userObj.is_premium = true;
-    userObj.premium_plan = 'platinum_12';
-    userObj.premium_name = 'Platinum';
-    userObj.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-    userObj.premium_features = [
-      'Unlimited Messaging',
-      'View Contact Details',
-      'Profile Boost (Unlimited)',
-      'Bold Listing in Search',
-      'Top Spotlight Profile',
-      'Personal Matchmaker',
-      'Priority Support 24/7'
-    ];
+    const isPremium = userObj.is_premium && userObj.premium_until && new Date(userObj.premium_until) > new Date();
+    userObj.is_premium = isPremium;
+    userObj.premium_plan = isPremium ? userObj.premium_plan : null;
+    userObj.premium_name = isPremium ? userObj.premium_name : null;
+    userObj.premium_until = isPremium ? userObj.premium_until : null;
+    userObj.premium_features = isPremium ? userObj.premium_features : [];
     return res.status(200).json(userObj);
   } catch (err) {
     console.error(err);
@@ -165,6 +159,7 @@ async function getProfiles(req, res) {
 
     let userObj = null;
     let query = { profile_completed: true };
+    let blockedUserIds = [];
 
     let token = req.cookies.access_token;
     if (!token) {
@@ -181,7 +176,14 @@ async function getProfiles(req, res) {
           const user = await User.findOne({ id: decoded.sub });
           if (user) {
             userObj = user.toObject();
-            query.id = { $ne: userObj.id };
+            const blocks = await Match.find({
+              $or: [
+                { user_id: userObj.id, type: 'block' },
+                { target_id: userObj.id, type: 'block' }
+              ]
+            });
+            blockedUserIds = blocks.map(b => b.user_id === userObj.id ? b.target_id : b.user_id);
+            query.id = { $nin: [userObj.id, ...blockedUserIds] };
             if (userObj.gender) {
               query.gender = userObj.gender === "Male" ? "Female" : "Male";
             }
@@ -195,19 +197,12 @@ async function getProfiles(req, res) {
     const profiles = await User.find(query, { password_hash: 0, _id: 0, email: 0, phone: 0 });
     const profilesList = profiles.map(p => {
       const pObj = p.toObject();
-      pObj.is_premium = true;
-      pObj.premium_plan = 'platinum_12';
-      pObj.premium_name = 'Platinum';
-      pObj.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-      pObj.premium_features = [
-        'Unlimited Messaging',
-        'View Contact Details',
-        'Profile Boost (Unlimited)',
-        'Bold Listing in Search',
-        'Top Spotlight Profile',
-        'Personal Matchmaker',
-        'Priority Support 24/7'
-      ];
+      const isPremium = pObj.is_premium && pObj.premium_until && new Date(pObj.premium_until) > new Date();
+      pObj.is_premium = isPremium;
+      pObj.premium_plan = isPremium ? pObj.premium_plan : null;
+      pObj.premium_name = isPremium ? pObj.premium_name : null;
+      pObj.premium_until = isPremium ? pObj.premium_until : null;
+      pObj.premium_features = isPremium ? pObj.premium_features : [];
       return pObj;
     });
 
@@ -236,6 +231,7 @@ async function advancedSearch(req, res) {
     const filters = req.body || {};
 
     const query = { profile_completed: true };
+    let blockedUserIds = [];
 
     let token = req.cookies.access_token;
     if (!token) {
@@ -249,7 +245,15 @@ async function advancedSearch(req, res) {
       try {
         const decoded = authService.verifyToken(token);
         if (decoded.type === "access") {
-          query.id = { $ne: decoded.sub };
+          const currentUserId = decoded.sub;
+          const blocks = await Match.find({
+            $or: [
+              { user_id: currentUserId, type: 'block' },
+              { target_id: currentUserId, type: 'block' }
+            ]
+          });
+          blockedUserIds = blocks.map(b => b.user_id === currentUserId ? b.target_id : b.user_id);
+          query.id = { $nin: [currentUserId, ...blockedUserIds] };
         }
       } catch (e) {
         // Ignore token issues
@@ -271,19 +275,12 @@ async function advancedSearch(req, res) {
 
     const profilesList = profiles.map(p => {
       const pObj = p.toObject();
-      pObj.is_premium = true;
-      pObj.premium_plan = 'platinum_12';
-      pObj.premium_name = 'Platinum';
-      pObj.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-      pObj.premium_features = [
-        'Unlimited Messaging',
-        'View Contact Details',
-        'Profile Boost (Unlimited)',
-        'Bold Listing in Search',
-        'Top Spotlight Profile',
-        'Personal Matchmaker',
-        'Priority Support 24/7'
-      ];
+      const isPremium = pObj.is_premium && pObj.premium_until && new Date(pObj.premium_until) > new Date();
+      pObj.is_premium = isPremium;
+      pObj.premium_plan = isPremium ? pObj.premium_plan : null;
+      pObj.premium_name = isPremium ? pObj.premium_name : null;
+      pObj.premium_until = isPremium ? pObj.premium_until : null;
+      pObj.premium_features = isPremium ? pObj.premium_features : [];
       return pObj;
     });
 
@@ -307,6 +304,17 @@ async function getProfileById(req, res) {
     const userId = req.params.user_id;
     const currentUser = req.user;
 
+    // Check if blocked
+    const block = await Match.findOne({
+      $or: [
+        { user_id: currentUser.id, target_id: userId, type: 'block' },
+        { user_id: userId, target_id: currentUser.id, type: 'block' }
+      ]
+    });
+    if (block) {
+      return res.status(403).json({ detail: "Profile not found or unavailable" });
+    }
+
     const profile = await User.findOne({ id: userId });
     if (!profile) {
       return res.status(404).json({ detail: "Profile not found" });
@@ -315,19 +323,23 @@ async function getProfileById(req, res) {
     const profileObj = profile.toObject();
     delete profileObj.password_hash;
     delete profileObj._id;
-    profileObj.is_premium = true;
-    profileObj.premium_plan = 'platinum_12';
-    profileObj.premium_name = 'Platinum';
-    profileObj.premium_until = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-    profileObj.premium_features = [
-      'Unlimited Messaging',
-      'View Contact Details',
-      'Profile Boost (Unlimited)',
-      'Bold Listing in Search',
-      'Top Spotlight Profile',
-      'Personal Matchmaker',
-      'Priority Support 24/7'
-    ];
+    const isPremium = profileObj.is_premium && profileObj.premium_until && new Date(profileObj.premium_until) > new Date();
+    profileObj.is_premium = isPremium;
+    profileObj.premium_plan = isPremium ? profileObj.premium_plan : null;
+    profileObj.premium_name = isPremium ? profileObj.premium_name : null;
+    profileObj.premium_until = isPremium ? profileObj.premium_until : null;
+    profileObj.premium_features = isPremium ? profileObj.premium_features : [];
+
+    // Fetch match status
+    const [myRecord, theirRecord] = await Promise.all([
+      Match.findOne({ user_id: currentUser.id, target_id: userId }),
+      Match.findOne({ user_id: userId, target_id: currentUser.id })
+    ]);
+    profileObj.liked_by_me = myRecord?.type === 'like';
+    profileObj.liked_by_them = theirRecord?.type === 'like';
+    profileObj.is_mutual_match = profileObj.liked_by_me && profileObj.liked_by_them;
+    profileObj.blocked_by_me = myRecord?.type === 'block';
+    profileObj.blocked_by_them = theirRecord?.type === 'block';
 
     // Log profile view activity if viewing someone else
     if (currentUser.id !== userId) {
@@ -375,9 +387,10 @@ async function getProfileViews(req, res) {
       if (viewer) {
         const viewerObj = viewer.toObject();
         viewerObj.viewed_at = v.timestamp;
-        viewerObj.is_premium = true;
-        viewerObj.premium_plan = 'platinum_12';
-        viewerObj.premium_name = 'Platinum';
+        const isPremium = viewerObj.is_premium && viewerObj.premium_until && new Date(viewerObj.premium_until) > new Date();
+        viewerObj.is_premium = isPremium;
+        viewerObj.premium_plan = isPremium ? viewerObj.premium_plan : null;
+        viewerObj.premium_name = isPremium ? viewerObj.premium_name : null;
         viewers.push(viewerObj);
       }
     }
@@ -419,6 +432,11 @@ async function deleteProfile(req, res) {
     // Clean up Messages where user was sender or receiver
     await Message.deleteMany({
       $or: [{ sender_id: userId }, { receiver_id: userId }]
+    });
+
+    // Clean up Matches where user was user_id or target_id
+    await Match.deleteMany({
+      $or: [{ user_id: userId }, { target_id: userId }]
     });
 
     // Clear auth cookies on client

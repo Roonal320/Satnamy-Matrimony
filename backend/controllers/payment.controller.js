@@ -1,21 +1,25 @@
 const Order = require('../models/Order');
 const User = require('../models/User');
 const paymentService = require('../services/payment.service');
-const uuid = require('uuid');
 
+/**
+ * Plan definitions with Dodo product IDs.
+ * Replace the placeholder product IDs (pdt_*) with your actual
+ * Dodo Payments product IDs from the dashboard.
+ */
 const PLANS = {
-  "gold_1": { "name": "Gold", "months": 1, "amount": 50000, "features": ["unlimited_messaging", "view_contacts", "profile_boost"] },
-  "gold_3": { "name": "Gold", "months": 3, "amount": 120000, "features": ["unlimited_messaging", "view_contacts", "profile_boost"] },
-  "gold_6": { "name": "Gold", "months": 6, "amount": 200000, "features": ["unlimited_messaging", "view_contacts", "profile_boost"] },
-  "gold_12": { "name": "Gold", "months": 12, "amount": 300000, "features": ["unlimited_messaging", "view_contacts", "profile_boost"] },
-  "diamond_1": { "name": "Diamond", "months": 1, "amount": 100000, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight"] },
-  "diamond_3": { "name": "Diamond", "months": 3, "amount": 240000, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight"] },
-  "diamond_6": { "name": "Diamond", "months": 6, "amount": 400000, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight"] },
-  "diamond_12": { "name": "Diamond", "months": 12, "amount": 600000, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight"] },
-  "platinum_1": { "name": "Platinum", "months": 1, "amount": 150000, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight", "personal_matchmaker", "priority_support"] },
-  "platinum_3": { "name": "Platinum", "months": 3, "amount": 390000, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight", "personal_matchmaker", "priority_support"] },
-  "platinum_6": { "name": "Platinum", "months": 6, "amount": 600000, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight", "personal_matchmaker", "priority_support"] },
-  "platinum_12": { "name": "Platinum", "months": 12, "amount": 990000, "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight", "personal_matchmaker", "priority_support"] },
+  "gold_1": { "name": "Gold", "months": 1, "amount": 49900, "productId": "pdt_0Nh2ItEtNToW0xbRoANuB", "features": ["unlimited_messaging", "view_contacts", "profile_boost"] },
+  "gold_3": { "name": "Gold", "months": 3, "amount": 99900, "productId": "pdt_0Nh2J9w0cxu3JhiVd8O6A", "features": ["unlimited_messaging", "view_contacts", "profile_boost"] },
+  "gold_6": { "name": "Gold", "months": 6, "amount": 149900, "productId": "pdt_0Nh2JVxUD7WcAtUTwutO1", "features": ["unlimited_messaging", "view_contacts", "profile_boost"] },
+  "gold_12": { "name": "Gold", "months": 12, "amount": 199900, "productId": "pdt_0Nh2JlsBCXPUHuBGKSzQc", "features": ["unlimited_messaging", "view_contacts", "profile_boost"] },
+  "diamond_1": { "name": "Diamond", "months": 1, "amount": 99900, "productId": "pdt_0Nh2K1EYnvK0tG3Y7kuKS", "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight"] },
+  "diamond_3": { "name": "Diamond", "months": 3, "amount": 199900, "productId": "pdt_0Nh2LbOxjk2DVOeJYHew8", "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight"] },
+  "diamond_6": { "name": "Diamond", "months": 6, "amount": 299900, "productId": "pdt_0Nh2M3HDDKbqfsfbld7Pt", "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight"] },
+  "diamond_12": { "name": "Diamond", "months": 12, "amount": 399900, "productId": "pdt_0Nh2MLhjAIeWsOePNRwtC", "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight"] },
+  "platinum_1": { "name": "Platinum", "months": 1, "amount": 149900, "productId": "pdt_0Nh2MeaZbF8D00YK4ZgUD", "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight", "personal_matchmaker", "priority_support"] },
+  "platinum_3": { "name": "Platinum", "months": 3, "amount": 299900, "productId": "pdt_0Nh2MnLRKk2IpqTG66MCh", "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight", "personal_matchmaker", "priority_support"] },
+  "platinum_6": { "name": "Platinum", "months": 6, "amount": 449900, "productId": "pdt_0Nh2MwfInqwYgenB9yctm", "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight", "personal_matchmaker", "priority_support"] },
+  "platinum_12": { "name": "Platinum", "months": 12, "amount": 599900, "productId": "pdt_0Nh2N61xDQiA32znTpkY4", "features": ["unlimited_messaging", "view_contacts", "profile_boost", "bold_listing", "spotlight", "personal_matchmaker", "priority_support"] },
 };
 
 /**
@@ -26,11 +30,13 @@ function getPlans(req, res) {
 }
 
 /**
- * Creates order and signs with a checksum hash.
+ * Creates a Dodo Payments checkout session and returns the checkout URL.
  */
 async function createOrder(req, res) {
   try {
-    return res.status(403).json({ detail: "Direct ordering is disabled. All premium features are currently active and free under the launch promotion." });
+    // Launch promotion guard — comment out or remove when testing/live
+    // return res.status(403).json({ detail: "Direct ordering is disabled. All premium features are currently active and free under the launch promotion." });
+
     const user = req.user;
     const { plan, amount, frontend_url } = req.body;
 
@@ -43,133 +49,85 @@ async function createOrder(req, res) {
       return res.status(400).json({ detail: "Invalid plan" });
     }
 
-    const payuKey = process.env.PAYU_MERCHANT_KEY || "dummy_merchant_key";
-    const payuSalt = process.env.PAYU_MERCHANT_SALT || "dummy_merchant_salt";
-    const payuEnv = process.env.PAYU_ENV || "sandbox";
+    // Build the return URL for after checkout
+    const returnUrl = frontend_url
+      ? `${frontend_url}/premium?status=success`
+      : `${(process.env.CORS_ORIGINS || 'http://localhost:5173').split(',')[0].trim()}/premium?status=success`;
 
-    const payuUrl = payuEnv === "sandbox" ? "https://test.payu.in/_payment" : "https://secure.payu.in/_payment";
-
-    const txnid = `txn_${uuid.v4().replace(/-/g, '').slice(0, 12)}`;
-
-    const amountInRupees = parseFloat(amount) / 100.0;
-    const amountStr = amountInRupees.toFixed(2);
-
-    const productinfo = plan;
-    const firstname = user.name || "Customer";
-    const email = user.email;
-    const phone = user.phone || "";
-
-    // Sanitize phone
-    let phoneDigits = phone.replace(/\D/g, '');
-    if (phoneDigits.length !== 10) {
-      phoneDigits = "9999999999";
-    }
-
-    const host = req.headers.host || "localhost:8000";
-    const proto = req.headers['x-forwarded-proto'] || req.protocol || "http";
-    const callbackUrl = `${proto}://${host}/api/premium/payu-callback`;
-
-    // Compute cryptographic order hash
-    const generatedHash = paymentService.generateOrderHash({
-      key: payuKey,
-      txnid,
-      amount: amountStr,
-      productinfo,
-      firstname,
-      email,
-      salt: payuSalt
+    // Create Dodo Payments checkout session
+    const session = await paymentService.createCheckoutSession({
+      productId: planInfo.productId,
+      quantity: 1,
+      customerEmail: user.email,
+      customerName: user.name || 'Customer',
+      returnUrl,
     });
 
+    // Persist the order record
     await Order.create({
-      id: txnid,
+      id: session.session_id,
       user_id: user.id,
-      order_id: txnid,
+      order_id: session.session_id,
+      session_id: session.session_id,
       plan: plan,
       plan_name: planInfo.name,
       months: planInfo.months,
       amount: amount,
-      status: "created",
+      status: "pending",
+      payment_gateway: "dodo",
       frontend_url: frontend_url || null,
       created_at: new Date().toISOString()
     });
 
     return res.status(200).json({
-      payu_url: payuUrl,
-      key: payuKey,
-      txnid: txnid,
-      amount: amountStr,
-      productinfo: productinfo,
-      firstname: firstname,
-      email: email,
-      phone: phoneDigits,
-      surl: callbackUrl,
-      furl: callbackUrl,
-      hash: generatedHash
+      checkout_url: session.checkout_url,
+      session_id: session.session_id,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Dodo Payments create order error:", err);
     return res.status(500).json({ detail: "Internal server error" });
   }
 }
 
 /**
- * Handle POST request callback redirected from PayU servers.
+ * Handle Dodo Payments webhook events.
+ * Called by the @dodopayments/express Webhooks middleware which
+ * verifies the signature automatically before passing the payload.
  */
-async function payuCallback(req, res) {
+async function handleDodoWebhook(payload) {
   try {
-    const data = req.body || {};
+    const eventType = payload.event_type || payload.type;
+    const paymentData = payload.data || payload;
 
-    const txnid = data.txnid;
-    const status = data.status;
-    const amount = data.amount;
-    const productinfo = data.productinfo;
-    const firstname = data.firstname;
-    const email = data.email;
-    const returnedHash = data.hash;
-    const key = data.key;
+    console.log(`Dodo Webhook received: ${eventType}`);
 
-    const order = await Order.findOne({ order_id: txnid });
+    if (eventType === 'payment.succeeded' || eventType === 'payment_succeeded') {
+      const sessionId = paymentData.session_id || paymentData.checkout_session_id || paymentData.payment_id;
 
-    const corsOriginsEnv = process.env.CORS_ORIGINS || "http://localhost:5173,http://localhost:3000";
-    const fallbackFrontend = corsOriginsEnv.split(',')[0].trim();
+      const order = await Order.findOne({
+        $or: [
+          { session_id: sessionId },
+          { order_id: sessionId }
+        ]
+      });
 
-    if (!order) {
-      console.error(`PayU Callback: Order ${txnid} not found`);
-      return res.redirect(303, `${fallbackFrontend}/premium?status=failure&error=Order+not+found`);
-    }
+      if (!order) {
+        console.error(`Dodo Webhook: Order not found for session ${sessionId}`);
+        return;
+      }
 
-    const frontendUrl = order.frontend_url || fallbackFrontend;
-    const payuSalt = process.env.PAYU_MERCHANT_SALT || "dummy_merchant_salt";
-
-    // Verify hash integrity
-    const isHashValid = paymentService.verifyCallbackHash({
-      salt: payuSalt,
-      status,
-      email,
-      firstname,
-      productinfo,
-      amount,
-      txnid,
-      key,
-      returnedHash,
-      body: data
-    });
-
-    if (!isHashValid) {
-      console.error(`PayU Callback: Hash verification failed for txn ${txnid}. Calculated hash mismatch.`);
+      // Mark order completed
       await Order.updateOne(
-        { order_id: txnid },
-        { $set: { status: "failed", error: "Hash verification failed" } }
-      );
-      return res.redirect(303, `${frontendUrl}/premium?status=failure&error=Hash+verification+failed`);
-    }
-
-    if (status === "success") {
-      await Order.updateOne(
-        { order_id: txnid },
-        { $set: { status: "completed", payment_id: data.mihpayid || txnid } }
+        { _id: order._id },
+        {
+          $set: {
+            status: "completed",
+            payment_id: paymentData.payment_id || sessionId
+          }
+        }
       );
 
+      // Activate premium for the user
       const planInfo = PLANS[order.plan] || {};
       const months = planInfo.months || 3;
       const premiumUntil = new Date();
@@ -188,22 +146,38 @@ async function payuCallback(req, res) {
         }
       );
 
-      return res.redirect(303, `${frontendUrl}/premium?status=success&txnid=${txnid}`);
-    } else {
-      await Order.updateOne(
-        { order_id: txnid },
-        { $set: { status: "failed", payment_id: data.mihpayid || null, error_message: data.error_Message || "Payment failed" } }
-      );
-      return res.redirect(303, `${frontendUrl}/premium?status=failure&txnid=${txnid}`);
+      console.log(`Dodo Webhook: Premium activated for user ${order.user_id}, plan ${order.plan}`);
+
+    } else if (eventType === 'payment.failed' || eventType === 'payment_failed') {
+      const sessionId = paymentData.session_id || paymentData.checkout_session_id || paymentData.payment_id;
+
+      const order = await Order.findOne({
+        $or: [
+          { session_id: sessionId },
+          { order_id: sessionId }
+        ]
+      });
+
+      if (order) {
+        await Order.updateOne(
+          { _id: order._id },
+          {
+            $set: {
+              status: "failed",
+              error_message: paymentData.error || "Payment failed"
+            }
+          }
+        );
+        console.log(`Dodo Webhook: Payment failed for order ${order.order_id}`);
+      }
     }
   } catch (err) {
-    console.error("PayU Callback Error:", err);
-    return res.status(500).json({ detail: "Internal server error" });
+    console.error("Dodo Webhook processing error:", err);
   }
 }
 
 module.exports = {
   getPlans,
   createOrder,
-  payuCallback
+  handleDodoWebhook
 };

@@ -16,6 +16,11 @@ const OrderSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  session_id: {
+    type: String,
+    default: null,
+    index: true
+  },
   plan: {
     type: String,
     required: true
@@ -34,7 +39,11 @@ const OrderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    default: "created"
+    default: "pending"
+  },
+  payment_gateway: {
+    type: String,
+    default: "dodo"
   },
   frontend_url: {
     type: String,

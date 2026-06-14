@@ -121,6 +121,56 @@ const Profile = () => {
     }
   };
 
+  const handleLike = async () => {
+    try {
+      const { data } = await axios.post(`${API}/match/like`, { target_id: userId }, { withCredentials: true });
+      if (data.success) {
+        toast.success(data.is_mutual_match ? "🎉 It's a match!" : "Liked profile!");
+        fetchProfile();
+      }
+    } catch (err) {
+      toast.error("Failed to like profile");
+    }
+  };
+
+  const handleUnlike = async () => {
+    try {
+      const { data } = await axios.post(`${API}/match/unlike`, { target_id: userId }, { withCredentials: true });
+      if (data.success) {
+        toast.success("Unliked profile");
+        fetchProfile();
+      }
+    } catch (err) {
+      toast.error("Failed to unlike profile");
+    }
+  };
+
+  const handleBlock = async () => {
+    if (window.confirm("Are you sure you want to block this user?")) {
+      try {
+        const { data } = await axios.post(`${API}/match/block`, { target_id: userId }, { withCredentials: true });
+        if (data.success) {
+          toast.success("Blocked user");
+          fetchProfile();
+        }
+      } catch (err) {
+        toast.error("Failed to block user");
+      }
+    }
+  };
+
+  const handleUnblock = async () => {
+    try {
+      const { data } = await axios.post(`${API}/match/unblock`, { target_id: userId }, { withCredentials: true });
+      if (data.success) {
+        toast.success("Unblocked user");
+        fetchProfile();
+      }
+    } catch (err) {
+      toast.error("Failed to unblock user");
+    }
+  };
+
   const calculateAge = (dob) => {
     const birthDate = new Date(dob);
     const today = new Date();
@@ -237,7 +287,7 @@ const Profile = () => {
                 <img
                   src={getImageUrl(profile.profile_photo)}
                   alt={profile.name}
-                  className={`w-full h-full object-cover transition-all duration-300 ${!isOwnProfile && !user?.is_premium ? 'blur-md select-none scale-105' : ''}`}
+                  className="w-full h-full object-cover transition-all duration-300"
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='800' viewBox='0 0 600 800'%3E%3Crect width='600' height='800' fill='%23f0e8f0'/%3E%3Ccircle cx='300' cy='280' r='110' fill='%23c9a0c9'/%3E%3Cellipse cx='300' cy='620' rx='180' ry='150' fill='%23c9a0c9'/%3E%3Ctext x='300' y='760' font-family='Arial' font-size='28' fill='%23888' text-anchor='middle'%3ENo Photo%3C/text%3E%3C/svg%3E`;
@@ -273,42 +323,70 @@ const Profile = () => {
                     </label>
                   </>
                 )}
-
-                {!isOwnProfile && !user?.is_premium && (
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-xs flex flex-col items-center justify-center text-center p-4">
-                    <Crown className="w-10 h-10 text-yellow-400 mb-2 animate-bounce" />
-                    <p className="text-white font-heading font-semibold text-lg">Photo Blurred</p>
-                    <p className="text-white/80 font-body text-xs mb-4">Upgrade to premium to view unblurred photos</p>
-                    <Button 
-                      size="sm" 
-                      onClick={() => navigate('/premium')} 
-                      className="bg-yellow-500 hover:bg-yellow-600 text-black font-body text-xs font-bold rounded-full h-8 px-4"
-                    >
-                      Unlock Photo
-                    </Button>
-                  </div>
-                )}
               </div>
               {!isOwnProfile && (
                 <div className="p-4 space-y-3">
-                  <Button
-                    data-testid="send-message-button"
-                    onClick={user?.is_premium ? handleSendMessage : () => navigate('/premium')}
-                    className="w-full h-12 rounded-full font-body text-white transition-smooth"
-                    style={{ background: user?.is_premium ? 'var(--primary)' : 'var(--text-secondary)' }}
-                  >
-                    {user?.is_premium ? (
-                      <>
-                        <MessageCircle className="w-5 h-5 mr-2" />
-                        Send Message
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-4 h-4 mr-2" />
-                        Unlock Messaging
-                      </>
-                    )}
-                  </Button>
+                  {profile.blocked_by_me ? (
+                    <Button
+                      onClick={handleUnblock}
+                      className="w-full h-12 rounded-full font-body text-white bg-gray-600 hover:bg-gray-700 transition-smooth"
+                    >
+                      Unblock User
+                    </Button>
+                  ) : (
+                    <>
+                      {/* Messaging Button */}
+                      {profile.is_mutual_match ? (
+                        <Button
+                          data-testid="send-message-button"
+                          onClick={handleSendMessage}
+                          className="w-full h-12 rounded-full font-body text-white transition-smooth bg-blue-500 hover:bg-blue-600"
+                        >
+                          <MessageCircle className="w-5 h-5 mr-2" />
+                          Send Message
+                        </Button>
+                      ) : (
+                        <Button
+                          disabled
+                          className="w-full h-12 rounded-full font-body text-gray-400 bg-gray-100 cursor-not-allowed"
+                        >
+                          <Lock className="w-4 h-4 mr-2" />
+                          Match Required to Chat
+                        </Button>
+                      )}
+
+                      {/* Like / Unlike Action */}
+                      <div className="flex gap-2">
+                        {profile.liked_by_me ? (
+                          <Button
+                            onClick={handleUnlike}
+                            variant="outline"
+                            className="flex-1 h-12 rounded-full font-body border-pink-500 text-pink-500 hover:bg-pink-50 transition-smooth"
+                          >
+                            <Heart className="w-4 h-4 mr-2 fill-current text-pink-500" />
+                            Liked
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={handleLike}
+                            className="flex-1 h-12 rounded-full font-body text-white bg-pink-500 hover:bg-pink-600 transition-smooth"
+                          >
+                            <Heart className="w-4 h-4 mr-2" />
+                            {profile.liked_by_them ? "Like Back" : "Like"}
+                          </Button>
+                        )}
+
+                        <Button
+                          onClick={handleBlock}
+                          variant="ghost"
+                          className="h-12 w-12 rounded-full p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-smooth"
+                          title="Block User"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>

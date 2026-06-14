@@ -65,7 +65,7 @@ const RefundPolicy = () => {
               If your bank account was charged twice for a single subscription, or if payment was successful but the premium subscription was not activated, this constitutes a billing error.
             </p>
             <p>
-              Please notify us immediately by emailing your transaction receipt and registered account details to <a href="mailto:satnamishaadiii@gmail.com" style={{ color: 'var(--primary)' }} className="underline">satnamishaadiii@gmail.com</a>. We will verify the transaction with our payment gateway (PayU) and reverse duplicate charges or manually activate your subscription within <strong>48 hours</strong>.
+              Please notify us immediately by emailing your transaction receipt and registered account details to <a href="mailto:satnamishaadiii@gmail.com" style={{ color: 'var(--primary)' }} className="underline">satnamishaadiii@gmail.com</a>. We will verify the transaction with our payment gateway (Dodo Payments) and reverse duplicate charges or manually activate your subscription within <strong>48 hours</strong>.
             </p>
           </Section>
 

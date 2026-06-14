@@ -34,7 +34,7 @@ const PrivacyPolicy = () => {
               <li><strong>Photos & Media:</strong> Profile photos uploaded by you. These are stored securely to prevent unauthorized downloads.</li>
               <li><strong>Verification Data:</strong> Voluntary uploads of government-issued identification documents or selfies for account verification badge status.</li>
               <li><strong>Communication Records:</strong> Chats, messages, and interaction logs exchanged with other members on our platform.</li>
-              <li><strong>Payment Records:</strong> Secure transaction references and payment status from the PayU gateway. We do not collect or store card numbers or banking PINs.</li>
+              <li><strong>Payment Records:</strong> Secure transaction references and payment status from the Dodo Payments gateway. We do not collect or store card numbers or banking PINs.</li>
               <li><strong>Usage & System Logs:</strong> Device type, IP addresses, browser info, pages viewed, and access timestamps.</li>
             </ul>
           </Section>
@@ -46,7 +46,7 @@ const PrivacyPolicy = () => {
               <li>To suggest highly compatible matches matching your partner preferences.</li>
               <li>To verify user identity and maintain a safe, spam-free matrimonial environment.</li>
               <li>To facilitate secure messages and notifications between matched members.</li>
-              <li>To process premium membership payments securely via PayU and manage subscriptions.</li>
+              <li>To process premium membership payments securely via Dodo Payments and manage subscriptions.</li>
               <li>To send service confirmations, verification codes, match alerts, and support responses.</li>
             </ul>
           </Section>
@@ -55,7 +55,7 @@ const PrivacyPolicy = () => {
             <p>Your privacy is our priority. We do <strong>not</strong> sell, rent, or trade your personal data. Sharing only occurs under these conditions:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li><strong>With Other Members:</strong> Registered users can view your profile data (excluding contact details for free tier accounts) to assess compatibility. You can adjust visibility settings in your dashboard.</li>
-              <li><strong>With Essential Service Providers:</strong> Minimal necessary data is shared with cloud infrastructure (AWS S3 for secure photos), database (MongoDB Atlas), and payment processor (PayU) exclusively to run the service.</li>
+              <li><strong>With Essential Service Providers:</strong> Minimal necessary data is shared with cloud infrastructure (AWS S3 for secure photos), database (MongoDB Atlas), and payment processor (Dodo Payments) exclusively to run the service.</li>
               <li><strong>Legal Compliance:</strong> When required by Indian law, court orders, or law enforcement authorities.</li>
             </ul>
           </Section>
