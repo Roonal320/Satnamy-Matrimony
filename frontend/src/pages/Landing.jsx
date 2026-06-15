@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../c
 import axios from 'axios';
 import { Search, Filter, MapPin, Briefcase, GraduationCap, Crown, Heart, Lock, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import SEO from '../components/SEO';
 
 const API = `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')}/api`;
 
@@ -115,6 +116,15 @@ const Landing = () => {
       fetchMatches();
     }
   }, [activeTab, user]);
+
+  useEffect(() => {
+    if (filters.search !== undefined) {
+      const delayDebounceFn = setTimeout(() => {
+        applyFilters();
+      }, 500);
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [filters.search]);
 
   const handleLike = async (e, targetId) => {
     e.stopPropagation();
@@ -222,6 +232,12 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
+      <SEO 
+        title="Satnami Matrimony - Find Your Perfect Life Partner"
+        description="Trusted Satnami Matrimony platform for the Satnami community. Find your perfect life partner with the blessings of Guru Ghasidas Ji. Register free to browse verified profiles of Satnami brides and grooms."
+        keywords="satnami matrimony, satnami shadi, satnami vivah, satnami shaadi, guru ghasidas, satnami community, matrimony, matrimonial services"
+        canonicalUrl="https://satnamishaadiii.com"
+      />
       <Header />
 
       {/* Hero Section */}
@@ -267,16 +283,21 @@ const Landing = () => {
       {/* Search and Filter Section */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'var(--text-secondary)' }} />
+          <form onSubmit={(e) => { e.preventDefault(); applyFilters(); }} className="flex-1 relative">
+            <Search 
+              className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 cursor-pointer hover:scale-105 transition-transform" 
+              style={{ color: 'var(--text-secondary)' }} 
+              onClick={applyFilters}
+            />
             <Input
               data-testid="search-input"
-              placeholder={t('landing.search_placeholder')}
-              className="pl-10 sm:pl-12 h-11 sm:h-12 font-body text-sm sm:text-base"
+              placeholder={t('landing.search_placeholder') || "Search by name, city, state, occupation..."}
+              className="pl-10 sm:pl-12 pr-12 h-11 sm:h-12 font-body text-sm sm:text-base"
               style={{ background: 'var(--surface)' }}
-              onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+              value={filters.search || ''}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
             />
-          </div>
+          </form>
 
           <Sheet>
             <SheetTrigger asChild>
@@ -305,6 +326,7 @@ const Landing = () => {
                     <SelectContent>
                       <SelectItem value="Male">{t('landing.male')}</SelectItem>
                       <SelectItem value="Female">{t('landing.female')}</SelectItem>
+                      <SelectItem value="Transgender">{t('landing.transgender', { defaultValue: 'Transgender' })}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -521,6 +543,7 @@ const Landing = () => {
                         </h3>
                         <p className="font-body text-xs sm:text-sm text-white/90">
                           {profile.date_of_birth && `${calculateAge(profile.date_of_birth)} ${t('landing.years')}`}
+                          {profile.gender && ` • ${profile.gender}`}
                         </p>
                       </div>
                     </div>
@@ -663,6 +686,7 @@ const Landing = () => {
                       </h3>
                       <p className="font-body text-xs sm:text-sm text-white/90">
                         {profile.date_of_birth && `${calculateAge(profile.date_of_birth)} ${t('landing.years')}`}
+                        {profile.gender && ` • ${profile.gender}`}
                       </p>
                     </div>
                   </div>
@@ -740,6 +764,7 @@ const Landing = () => {
                         </h3>
                         <p className="font-body text-xs sm:text-sm text-white/90">
                           {profile.date_of_birth && `${calculateAge(profile.date_of_birth)} ${t('landing.years')}`}
+                          {profile.gender && ` • ${profile.gender}`}
                         </p>
                       </div>
                     </div>

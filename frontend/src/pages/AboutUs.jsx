@@ -2,6 +2,7 @@ import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Heart, Users, Star, Shield, Target, Award, Quote, CheckCircle2, Sparkles } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const stats = [
   { value: '10,000+', label: 'Registered Members', desc: 'Trusting our sacred platform' },
@@ -49,6 +50,12 @@ const team = [
 const AboutUs = () => {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
+      <SEO 
+        title="About Us | Satnami Matrimony"
+        description="Learn more about Satnami Shaadi, a sacred matrimonial platform exclusively for the Satnami community, founded by Roonal Khandelwal. Guided by the teachings of Guru Ghasidas Ji."
+        keywords="about satnami matrimony, satnami shaadi company, roonal khandelwal, satnami values"
+        canonicalUrl="https://satnamishaadiii.com/about"
+      />
       <Header />
 
       {/* Hero Section */}

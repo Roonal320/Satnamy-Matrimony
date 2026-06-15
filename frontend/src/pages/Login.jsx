@@ -10,6 +10,7 @@ import { Label } from '../components/ui/label';
 import { AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { logAnalyticsEvent } from '../lib/firebase';
+import SEO from '../components/SEO';
 
 /**
  * Styled Google button matching the app's design system.
@@ -122,6 +123,12 @@ const Login = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
+      <SEO 
+        title="Login | Satnami Matrimony"
+        description="Login to your Satnami Matrimony account. Access your matches, verify your profile, and search for compatible brides and grooms in the Satnami community."
+        keywords="login satnami matrimony, satnami shadi login, satnami vivah login"
+        canonicalUrl="https://satnamishaadiii.com/login"
+      />
       <Header />
       <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
         <div className="w-full max-w-md">

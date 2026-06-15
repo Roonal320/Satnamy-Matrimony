@@ -14,6 +14,7 @@ import { AlertCircle, Eye, EyeOff, Check, X, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { logAnalyticsEvent } from '../lib/firebase';
 import { toast } from 'sonner';
+import SEO from '../components/SEO';
 
 /**
  * Styled Google button matching the app's design system.
@@ -257,6 +258,12 @@ const Register = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
+      <SEO 
+        title="Register | Satnami Matrimony"
+        description="Create your free Satnami Matrimony account today. Join thousands of verified Satnami community members searching for their perfect lifepartner."
+        keywords="register satnami matrimony, satnami shadi registration, free satnami matrimony"
+        canonicalUrl="https://satnamishaadiii.com/register"
+      />
       <Header />
       <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4 py-12">
       <div className="w-full max-w-2xl">
@@ -419,6 +426,7 @@ const Register = () => {
                   <SelectContent>
                     <SelectItem value="Male">{t('landing.male')}</SelectItem>
                     <SelectItem value="Female">{t('landing.female')}</SelectItem>
+                    <SelectItem value="Transgender">{t('landing.transgender', { defaultValue: 'Transgender' })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -513,7 +521,7 @@ const Register = () => {
                 maxLength={6}
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                placeholder="123456"
+                placeholder=""
                 required
                 className="mt-2 text-center text-3xl tracking-[0.75em] h-14 font-mono font-bold focus:ring-primary focus:border-primary border-neutral-300 rounded-xl"
               />

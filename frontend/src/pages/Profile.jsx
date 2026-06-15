@@ -506,6 +506,7 @@ const Profile = () => {
               </h1>
               <p className="font-body text-lg mb-6" style={{ color: 'var(--text-secondary)' }}>
                 {profile.date_of_birth && `${calculateAge(profile.date_of_birth)} ${t('profile.years_old')}`}
+                {profile.gender && ` • ${profile.gender}`}
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -589,6 +590,7 @@ const Profile = () => {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
+                  { label: 'Gender', value: profile.gender },
                   { label: 'Height', value: profile.height ? `${profile.height} cm` : null },
                   { label: 'Weight', value: profile.weight ? `${profile.weight} kg` : null },
                   { label: 'Marital Status', value: profile.marital_status },

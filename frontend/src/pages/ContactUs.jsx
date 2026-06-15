@@ -3,6 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Mail, Phone, MapPin, Clock, Send, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
+import SEO from '../components/SEO';
 
 const ContactUs = () => {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -48,6 +49,12 @@ const ContactUs = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
+      <SEO 
+        title="Contact Us | Satnami Matrimony"
+        description="Get in touch with Satnami Shaadi support team. Find our address, phone/WhatsApp contact information, and email support details."
+        keywords="contact satnami matrimony, satnami shaadi phone number, satnami shaadi support email"
+        canonicalUrl="https://satnamishaadiii.com/contact"
+      />
       <Header />
 
       {/* Hero Banner */}

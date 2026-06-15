@@ -195,6 +195,7 @@ const GoogleCompleteSignup = () => {
                     <SelectContent>
                       <SelectItem value="Male">{t('landing.male', { defaultValue: 'Male' })}</SelectItem>
                       <SelectItem value="Female">{t('landing.female', { defaultValue: 'Female' })}</SelectItem>
+                      <SelectItem value="Transgender">{t('landing.transgender', { defaultValue: 'Transgender' })}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
