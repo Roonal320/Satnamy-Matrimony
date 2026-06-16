@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { SafeEmail } from '../components/SafeContact';
 
 const Section = ({ title, children }) => (
   <div className="mb-10">
@@ -23,7 +24,7 @@ const TermsAndConditions = () => {
       <div className="max-w-4xl mx-auto px-4 py-14">
         <div className="bg-white rounded-2xl p-8 md:p-12" style={{ border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
           <p className="font-body mb-10 p-4 rounded-xl text-sm" style={{ background: 'rgba(200,75,49,0.06)', color: 'var(--text-secondary)', borderLeft: '4px solid var(--primary)' }}>
-            Welcome to Satnami Matrimony (also known as Satnami Shaadi). This website is operated by <strong>Roonal Khandelwal</strong>, located at 10/1143 Shivanand Nagar Sec-1, Khamtarai, Raipur, Chhattisgarh – 492008. By accessing or using our website (satnamishaadiii.com) and services, you agree to be bound by these Terms & Conditions.
+            Welcome to Satnami Matrimony (also known as Satnami Shaadi). This website is operated by <strong>Roonal Khandelwal</strong>, located at <span data-nosnippet="">10/1143 Shivanand Nagar Sec-1, Khamtarai, Raipur, Chhattisgarh – 492008</span>. By accessing or using our website (satnamishaadiii.com) and services, you agree to be bound by these Terms & Conditions.
           </p>
 
           <Section title="1. Agreement & Acceptance">
@@ -89,7 +90,7 @@ const TermsAndConditions = () => {
 
           <Section title="7. Term & Termination">
             <p>
-              These Terms & Conditions remain in effect as long as you are a registered user of our website. You may terminate your membership at any time by requesting account deletion via your settings or by writing to us at <a href="mailto:satnamishaadiii@gmail.com" className="underline" style={{ color: 'var(--primary)' }}>satnamishaadiii@gmail.com</a>.
+              These Terms & Conditions remain in effect as long as you are a registered user of our website. You may terminate your membership at any time by requesting account deletion via your settings or by writing to us at <SafeEmail linkClassName="underline" linkStyle={{ color: 'var(--primary)' }} />.
             </p>
             <p>
               We reserve the right to suspend or terminate your profile immediately, without notice or explanation, if we believe you have breached these Terms & Conditions or if we receive complaints from other members regarding your conduct.
@@ -122,11 +123,10 @@ const TermsAndConditions = () => {
 
           <Section title="11. Grievance Redressal & Contact">
             <p>If you have any questions, feedback, or complaints regarding these Terms & Conditions, or if you wish to report misuse of the platform, contact our Grievance Officer:</p>
-            <div className="p-4 rounded-xl mt-4" style={{ background: 'var(--surface-secondary)' }}>
+            <div className="p-4 rounded-xl mt-4" style={{ background: 'var(--surface-secondary)' }} data-nosnippet="">
               <p><strong>Grievance Officer: Roonal Khandelwal</strong></p>
               <p>Address: 10/1143 Shivanand Nagar Sec-1, Khamtarai, Raipur, Chhattisgarh – 492008</p>
-              <p>Email: <a href="mailto:satnamishaadiii@gmail.com" style={{ color: 'var(--primary)' }}>satnamishaadiii@gmail.com</a></p>
-              <p>Phone: +91 9131261834</p>
+              <p>Email: <SafeEmail linkStyle={{ color: 'var(--primary)' }} /></p>
             </div>
           </Section>
         </div>

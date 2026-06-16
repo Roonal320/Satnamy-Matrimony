@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Mail, Phone, MapPin, Clock, Send, Building2 } from 'lucide-react';
+import { Mail, MapPin, Clock, Send, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import SEO from '../components/SEO';
+import { SafeEmail } from '../components/SafeContact';
 
 const ContactUs = () => {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -31,14 +32,9 @@ const ContactUs = () => {
       lines: ['10/1143 Shivanand Nagar Sec-1,', 'Khamtarai, Raipur,', 'Chhattisgarh – 492008, India'],
     },
     {
-      icon: <Phone className="w-6 h-6" style={{ color: 'var(--primary)' }} />,
-      title: 'Phone / WhatsApp',
-      lines: ['+91 9131261834'],
-    },
-    {
       icon: <Mail className="w-6 h-6" style={{ color: 'var(--primary)' }} />,
       title: 'Email Support',
-      lines: ['satnamishaadiii@gmail.com'],
+      lines: [<SafeEmail textOnly={true} />],
     },
     {
       icon: <Clock className="w-6 h-6" style={{ color: 'var(--primary)' }} />,
@@ -81,7 +77,7 @@ const ContactUs = () => {
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(200,75,49,0.08)' }}>
                     {item.icon}
                   </div>
-                  <div>
+                  <div data-nosnippet="">
                     <p className="font-body font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{item.title}</p>
                     {item.lines.map((line, j) => (
                       <p key={j} className="font-body text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{line}</p>

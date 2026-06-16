@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { SafeEmail } from '../components/SafeContact';
 
 const Section = ({ title, children }) => (
   <div className="mb-10">
@@ -65,7 +66,7 @@ const RefundPolicy = () => {
               If your bank account was charged twice for a single subscription, or if payment was successful but the premium subscription was not activated, this constitutes a billing error.
             </p>
             <p>
-              Please notify us immediately by emailing your transaction receipt and registered account details to <a href="mailto:satnamishaadiii@gmail.com" style={{ color: 'var(--primary)' }} className="underline">satnamishaadiii@gmail.com</a>. We will verify the transaction with our payment gateway (Dodo Payments) and reverse duplicate charges or manually activate your subscription within <strong>48 hours</strong>.
+              Please notify us immediately by emailing your transaction receipt and registered account details to <SafeEmail linkClassName="underline" linkStyle={{ color: 'var(--primary)' }} />. We will verify the transaction with our payment gateway (Dodo Payments) and reverse duplicate charges or manually activate your subscription within <strong>48 hours</strong>.
             </p>
           </Section>
 
@@ -80,11 +81,10 @@ const RefundPolicy = () => {
           </Section>
 
           <Section title="5. Contact Us">
-            <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)' }}>
+            <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)' }} data-nosnippet="">
               <p><strong>Roonal Khandelwal</strong></p>
               <p>10/1143 Shivanand Nagar Sec-1, Khamtarai, Raipur, Chhattisgarh – 492008</p>
-              <p>Email: <a href="mailto:satnamishaadiii@gmail.com" style={{ color: 'var(--primary)' }}>satnamishaadiii@gmail.com</a></p>
-              <p>Phone: +91 9131261834</p>
+              <p>Email: <SafeEmail linkStyle={{ color: 'var(--primary)' }} /></p>
             </div>
           </Section>
         </div>

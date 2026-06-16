@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from './ui/dialog';
-import { Heart, Mail, Phone, MapPin, Building2 } from 'lucide-react';
+import { Heart, Mail, MapPin, Building2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { SafeEmail } from './SafeContact';
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -115,19 +116,11 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--primary)' }} />
-                <a href="mailto:satnamishaadiii@gmail.com" className="font-body text-sm transition-colors hover:text-white" style={{ color: '#A09890' }}>
-                  satnamishaadiii@gmail.com
-                </a>
-              </li>
-              <li className="flex items-start gap-3">
-                <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--primary)' }} />
-                <a href="tel:+919131261834" className="font-body text-sm transition-colors hover:text-white" style={{ color: '#A09890' }}>
-                  +91 9131261834
-                </a>
+                <SafeEmail linkClassName="font-body text-sm transition-colors hover:text-white" linkStyle={{ color: '#A09890' }} />
               </li>
               <li className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--primary)' }} />
-                <span className="font-body text-sm leading-relaxed" style={{ color: '#A09890' }}>
+                <span data-nosnippet="" className="font-body text-sm leading-relaxed" style={{ color: '#A09890' }}>
                   10/1143 Shivanand Nagar Sec-1,<br />
                   Khamtarai, Raipur,<br />
                   Chhattisgarh – 492008

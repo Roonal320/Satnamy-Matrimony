@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { SafeEmail } from '../components/SafeContact';
 
 const Section = ({ title, children }) => (
   <div className="mb-10">
@@ -83,7 +84,7 @@ const PrivacyPolicy = () => {
               <li><strong>Account Deletion:</strong> Permanently delete your profile by writing to support.</li>
               <li><strong>Communications:</strong> Opt-out of non-transactional match alerts and emails.</li>
             </ul>
-            <p>To exercise any of these rights, email us at <a href="mailto:satnamishaadiii@gmail.com" className="underline" style={{ color: 'var(--primary)' }}>satnamishaadiii@gmail.com</a>.</p>
+            <p>To exercise any of these rights, email us at <SafeEmail linkClassName="underline" linkStyle={{ color: 'var(--primary)' }} />.</p>
           </Section>
 
           <Section title="7. Cookies & Session Storage">
@@ -100,11 +101,10 @@ const PrivacyPolicy = () => {
 
           <Section title="10. Grievance Officer & Contact Info">
             <p>If you have questions about our data practices or seek redressal for privacy concerns, please contact our Grievance Officer:</p>
-            <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)' }}>
+            <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)' }} data-nosnippet="">
               <p><strong>Grievance Officer: Roonal Khandelwal</strong></p>
               <p>10/1143 Shivanand Nagar Sec-1, Khamtarai, Raipur, Chhattisgarh – 492008</p>
-              <p>Email: <a href="mailto:satnamishaadiii@gmail.com" style={{ color: 'var(--primary)' }}>satnamishaadiii@gmail.com</a></p>
-              <p>Phone: +91 9131261834</p>
+              <p>Email: <SafeEmail linkStyle={{ color: 'var(--primary)' }} /></p>
             </div>
           </Section>
         </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { SafeEmail } from '../components/SafeContact';
 
 const Section = ({ title, children }) => (
   <div className="mb-10">
@@ -92,16 +93,15 @@ const ShippingPolicy = () => {
               <li>Temporary server maintenance windows.</li>
             </ul>
             <p>
-              If your account is not upgraded within <strong>30 minutes</strong> of completing your payment, please email us at <a href="mailto:satnamishaadiii@gmail.com" className="underline" style={{ color: 'var(--primary)' }}>satnamishaadiii@gmail.com</a> with your transaction reference. We will manually check the gateway logs and activate your plan within <strong>4 working hours</strong>.
+              If your account is not upgraded within <strong>30 minutes</strong> of completing your payment, please email us at <SafeEmail linkClassName="underline" linkStyle={{ color: 'var(--primary)' }} /> with your transaction reference. We will manually check the gateway logs and activate your plan within <strong>4 working hours</strong>.
             </p>
           </Section>
 
           <Section title="5. Contact Us">
-            <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)' }}>
+            <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)' }} data-nosnippet="">
               <p><strong>Roonal Khandelwal</strong></p>
               <p>10/1143 Shivanand Nagar Sec-1, Khamtarai, Raipur, Chhattisgarh – 492008</p>
-              <p>Email: <a href="mailto:satnamishaadiii@gmail.com" style={{ color: 'var(--primary)' }}>satnamishaadiii@gmail.com</a></p>
-              <p>Phone: +91 9131261834</p>
+              <p>Email: <SafeEmail linkStyle={{ color: 'var(--primary)' }} /></p>
             </div>
           </Section>
         </div>

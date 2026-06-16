@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { SafeEmail } from '../components/SafeContact';
 
 const Section = ({ title, children }) => (
   <div className="mb-10">
@@ -66,7 +67,7 @@ const CancellationPolicy = () => {
               If you have finalized your match or decide to leave Satnami Matrimony, you may request permanent deletion of your profile:
             </p>
             <ol className="list-decimal pl-5 space-y-1">
-              <li>Log in to your account, open Account Settings, and follow the DELETE profile prompts. Alternatively, email support at <a href="mailto:satnamishaadiii@gmail.com" className="underline" style={{ color: 'var(--primary)' }}>satnamishaadiii@gmail.com</a>.</li>
+              <li>Log in to your account, open Account Settings, and follow the DELETE profile prompts. Alternatively, email support at <SafeEmail linkClassName="underline" linkStyle={{ color: 'var(--primary)' }} />.</li>
               <li>Upon initiating deletion, your profile is immediately removed from matching searches.</li>
               <li>Your complete data profile, photos, and messages are permanently deleted from our servers within <strong>30 days</strong>.</li>
               <li>Please note that deleting your account does not make you eligible for a refund of any active premium subscription.</li>
@@ -89,11 +90,10 @@ const CancellationPolicy = () => {
 
           <Section title="5. Contact Support">
             <p>For any cancellation or account deletion queries, reach out to our helpdesk:</p>
-            <div className="p-4 rounded-xl mt-4" style={{ background: 'var(--surface-secondary)' }}>
+            <div className="p-4 rounded-xl mt-4" style={{ background: 'var(--surface-secondary)' }} data-nosnippet="">
               <p><strong>Roonal Khandelwal</strong></p>
               <p>10/1143 Shivanand Nagar Sec-1, Khamtarai, Raipur, Chhattisgarh – 492008</p>
-              <p>Email: <a href="mailto:satnamishaadiii@gmail.com" style={{ color: 'var(--primary)' }}>satnamishaadiii@gmail.com</a></p>
-              <p>Phone: +91 9131261834</p>
+              <p>Email: <SafeEmail linkStyle={{ color: 'var(--primary)' }} /></p>
             </div>
           </Section>
         </div>
