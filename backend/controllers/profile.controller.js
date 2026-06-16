@@ -269,6 +269,19 @@ async function advancedSearch(req, res) {
     if (filters.state) query.state = { $regex: filters.state, $options: 'i' };
     if (filters.income) query.income = filters.income;
 
+    if (filters.search) {
+      const searchRegex = { $regex: filters.search, $options: 'i' };
+      query.$or = [
+        { name: searchRegex },
+        { city: searchRegex },
+        { state: searchRegex },
+        { occupation: searchRegex },
+        { education: searchRegex },
+        { caste: searchRegex },
+        { mother_tongue: searchRegex }
+      ];
+    }
+
     const profiles = await User.find(query, { password_hash: 0, _id: 0, email: 0, phone: 0 })
       .skip(skip)
       .limit(limit);
