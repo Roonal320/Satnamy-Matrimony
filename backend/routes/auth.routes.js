@@ -9,6 +9,7 @@ router.post('/send-otp', authController.sendOtp);
 router.post('/login', authController.login);
 router.post('/google', authController.googleAuth);
 router.post('/google/register', authController.googleRegister);
+router.post('/parent-register', authController.parentRegister);
 router.post('/logout', authController.logout);
 router.get('/me', authenticate, authController.getMe);
 router.post('/forgot-password', authController.forgotPassword);

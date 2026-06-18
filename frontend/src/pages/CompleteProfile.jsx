@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
@@ -53,6 +53,28 @@ const CompleteProfile = () => {
     siblings: '',
   });
 
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        height: user.height || '',
+        weight: user.weight || '',
+        marital_status: user.marital_status || '',
+        caste: user.caste || '',
+        mother_tongue: user.mother_tongue || '',
+        education: user.education || '',
+        occupation: user.occupation || '',
+        income: user.income || '',
+        city: user.city || '',
+        state: user.state || '',
+        about: user.about || '',
+        family_type: user.family_type || '',
+        father_occupation: user.father_occupation || '',
+        mother_occupation: user.mother_occupation || '',
+        siblings: user.siblings || '',
+      });
+    }
+  }, [user]);
+
   const handleChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -106,22 +128,19 @@ const CompleteProfile = () => {
 
   const handleNext = async () => {
     if (step === 1) {
-      if (!formData.height || !formData.marital_status || !formData.caste || !formData.mother_tongue) {
+      if (!formData.marital_status) {
         toast.error('Please fill in all required fields.');
         return;
       }
       setStep(2);
     } else if (step === 2) {
-      if (!formData.education || !formData.income || !formData.city || !formData.state) {
+      if (!formData.education || !formData.city || !formData.state) {
         toast.error('Please fill in all required fields.');
         return;
       }
       setStep(3);
     } else if (step === 3) {
-      if (!formData.about) {
-        toast.error('Please write something about yourself.');
-        return;
-      }
+      // No required fields in step 3, proceed directly
       setLoading(true);
       
       const photoUploaded = await uploadPhoto();
@@ -151,7 +170,7 @@ const CompleteProfile = () => {
         <div className="bg-white rounded-2xl p-8 shadow-lg" style={{ border: '1px solid var(--border)' }}>
           <div className="mb-8">
             <h1 className="font-heading text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-              Complete Your Profile
+              {user?.registration_type && user?.registration_type !== 'self' ? "Complete Your Child's Profile" : "Complete Your Profile"}
             </h1>
             <p className="font-body" style={{ color: 'var(--text-secondary)' }}>
               Step {step} of 3: {step === 1 ? 'Personal Details' : step === 2 ? 'Professional Details' : 'About & Family'}
@@ -171,7 +190,7 @@ const CompleteProfile = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="height" className="font-body">Height (cm) <span style={{ color: 'var(--error)' }}>*</span></Label>
+                  <Label htmlFor="height" className="font-body">Height (cm)</Label>
                   <Input
                     id="height"
                     data-testid="profile-height-input"
@@ -199,7 +218,7 @@ const CompleteProfile = () => {
 
                 <div>
                   <Label htmlFor="marital_status" className="font-body">Marital Status <span style={{ color: 'var(--error)' }}>*</span></Label>
-                  <Select onValueChange={(value) => handleChange('marital_status', value)} required>
+                  <Select value={formData.marital_status} onValueChange={(value) => handleChange('marital_status', value)}>
                     <SelectTrigger data-testid="profile-marital-status-select" className="mt-2 h-12 font-body">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
@@ -212,7 +231,7 @@ const CompleteProfile = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="caste" className="font-body">Caste/Sub-caste <span style={{ color: 'var(--error)' }}>*</span></Label>
+                  <Label htmlFor="caste" className="font-body">Caste/Sub-caste</Label>
                   <Input
                     id="caste"
                     data-testid="profile-caste-input"
@@ -226,7 +245,7 @@ const CompleteProfile = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="mother_tongue" className="font-body">Mother Tongue <span style={{ color: 'var(--error)' }}>*</span></Label>
+                  <Label htmlFor="mother_tongue" className="font-body">Mother Tongue</Label>
                   <Input
                     id="mother_tongue"
                     data-testid="profile-mother-tongue-input"
@@ -273,8 +292,8 @@ const CompleteProfile = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="income" className="font-body">Annual Income <span style={{ color: 'var(--error)' }}>*</span></Label>
-                  <Select onValueChange={(value) => handleChange('income', value)} required>
+                  <Label htmlFor="income" className="font-body">Annual Income</Label>
+                  <Select value={formData.income} onValueChange={(value) => handleChange('income', value)}>
                     <SelectTrigger data-testid="profile-income-select" className="mt-2 h-12 font-body">
                       <SelectValue placeholder="Select income range" />
                     </SelectTrigger>
@@ -364,7 +383,7 @@ const CompleteProfile = () => {
               </div>
 
               <div>
-                <Label htmlFor="about" className="font-body">About Yourself <span style={{ color: 'var(--error)' }}>*</span></Label>
+                <Label htmlFor="about" className="font-body">About Yourself</Label>
                 <Textarea
                   id="about"
                   data-testid="profile-about-textarea"
@@ -380,7 +399,7 @@ const CompleteProfile = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="family_type" className="font-body">Family Type</Label>
-                  <Select onValueChange={(value) => handleChange('family_type', value)}>
+                  <Select value={formData.family_type} onValueChange={(value) => handleChange('family_type', value)}>
                     <SelectTrigger data-testid="profile-family-type-select" className="mt-2 h-12 font-body">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>

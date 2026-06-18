@@ -9,6 +9,8 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import GoogleCompleteSignup from './pages/GoogleCompleteSignup';
+import RegisterChoice from './pages/RegisterChoice';
+import ParentRegister from './pages/ParentRegister';
 import CompleteProfile from './pages/CompleteProfile';
 import Profile from './pages/Profile';
 import Chat from './pages/Chat';
@@ -39,6 +41,8 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/register-choice" element={<RegisterChoice />} />
+            <Route path="/parent-register" element={<ParentRegister />} />
             <Route path="/google-complete-signup" element={<GoogleCompleteSignup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />

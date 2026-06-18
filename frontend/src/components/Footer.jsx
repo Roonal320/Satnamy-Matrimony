@@ -8,7 +8,6 @@ import { SafeEmail } from './SafeContact';
 const Footer = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-
   const quickLinks = [
     { label: t('header.home'), path: '/' },
     { label: t('footer.search_profiles'), path: '/?tab=discover' },
@@ -18,20 +17,19 @@ const Footer = () => {
   ];
 
   const legalLinks = [
-    { label: 'About Us', path: '/about' },
-    { label: 'Contact Us', path: '/contact' },
-    { label: 'Privacy Policy', path: '/privacy-policy' },
-    { label: 'Terms & Conditions', path: '/terms' },
-    { label: 'Return & Refund Policy', path: '/refund-policy' },
-    { label: 'Cancellation Policy', path: '/cancellation-policy' },
-    { label: 'Shipping Policy', path: '/shipping-policy' },
+    { label: t('footer.about_us'), path: '/about' },
+    { label: t('footer.contact_us'), path: '/contact' },
+    { label: t('footer.privacy_policy'), path: '/privacy-policy' },
+    { label: t('footer.terms_conditions'), path: '/terms' },
+    { label: t('footer.refund_policy'), path: '/refund-policy' },
+    { label: t('footer.cancellation_policy'), path: '/cancellation-policy' },
+    { label: t('footer.shipping_policy'), path: '/shipping-policy' },
   ];
 
   return (
     <footer style={{ background: '#1F1A17', color: '#E6E2D8' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
-
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-4">
@@ -66,7 +64,7 @@ const Footer = () => {
             <div className="flex items-start gap-2 mt-4">
               <Building2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#A09890' }} />
               <p className="font-body text-xs leading-relaxed" style={{ color: '#706860' }}>
-                This website is operated by<br />
+                {t('footer.operated_by')}<br />
                 <span style={{ color: '#A09890' }}>Roonal Khandelwal</span>
               </p>
             </div>
@@ -93,7 +91,7 @@ const Footer = () => {
 
           {/* Legal & Policies */}
           <div>
-            <h4 className="font-heading text-lg font-semibold text-white mb-4">Legal & Policies</h4>
+            <h4 className="font-heading text-lg font-semibold text-white mb-4">{t('footer.legal_policies')}</h4>
             <ul className="space-y-3">
               {legalLinks.map((link) => (
                 <li key={link.path}>
@@ -134,7 +132,7 @@ const Footer = () => {
         <div className="mt-10 sm:mt-12 pt-6 sm:pt-8" style={{ borderTop: '1px solid #3A3530' }}>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="font-body text-xs sm:text-sm text-center sm:text-left" style={{ color: '#A09890' }}>
-              &copy; {new Date().getFullYear()} Satnami Shaadi — Operated by Roonal Khandelwal. All rights reserved.
+              {t('footer.copyright_text', { year: new Date().getFullYear() })}
             </p>
             <div className="flex items-center gap-1 font-body text-xs sm:text-sm" style={{ color: '#A09890' }}>
               {t('footer.made_with')} <Heart className="w-3 h-3 mx-1" style={{ color: 'var(--primary)' }} fill="var(--primary)" /> {t('footer.for_community')}

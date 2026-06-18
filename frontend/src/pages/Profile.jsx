@@ -8,7 +8,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import axios from 'axios';
-import { MapPin, Briefcase, GraduationCap, Heart, MessageCircle, ArrowLeft, Phone, User as UserIcon, Users, Lock, Crown, Camera, AlertCircle, X } from 'lucide-react';
+import { MapPin, Briefcase, GraduationCap, Heart, MessageCircle, ArrowLeft, Phone, User as UserIcon, Users, Lock, Crown, Camera, AlertCircle, X, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import Cropper from 'react-easy-crop';
@@ -21,7 +21,67 @@ const Profile = () => {
   const { userId } = useParams();
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const translateGender = (val) => {
+    if (!val) return val;
+    if (val === 'Male') return t('landing.male');
+    if (val === 'Female') return t('landing.female');
+    if (val === 'Transgender') return t('landing.transgender');
+    return val;
+  };
+
+  const translateMaritalStatus = (val) => {
+    if (!val) return val;
+    if (val === 'Never Married') return t('landing.never_married');
+    if (val === 'Divorced') return t('landing.divorced');
+    if (val === 'Widowed') return t('landing.widowed');
+    return val;
+  };
+
+  const translateFamilyType = (val) => {
+    if (!val) return val;
+    if (val === 'Nuclear') return t('profile.nuclear');
+    if (val === 'Joint') return t('profile.joint');
+    return val;
+  };
+
+  const translateReligion = (val) => {
+    if (!val) return val;
+    if (val === 'Satnami') return t('profile.satnami');
+    if (val === 'Other') return t('profile.other_religion');
+    return val;
+  };
+
+  const translateIncome = (val) => {
+    if (!val) return val;
+    const cleanVal = val.trim();
+    const map = {
+      'Below 3 Lakhs': t('landing.income_below_3'),
+      '3-5 Lakhs': t('landing.income_3_5'),
+      '5-7 Lakhs': t('landing.income_5_7'),
+      '7-10 Lakhs': t('landing.income_7_10'),
+      '10-15 Lakhs': t('landing.income_10_15'),
+      '15-20 Lakhs': t('profile.income_15_20'),
+      'Above 20 Lakhs': t('landing.income_above_20')
+    };
+    return map[cleanVal] || cleanVal;
+  };
+
+  const translateRelationship = (val) => {
+    if (!val) return val;
+    const key = val.toLowerCase();
+    return t(`profile.relationship.${key}`, val);
+  };
+
+  const translateContactMode = (val) => {
+    if (!val) return val;
+    if (val === 'Phone' || val === 'Phone Call') return i18n.language === 'hi' ? 'फ़ोन कॉल' : 'Phone Call';
+    if (val === 'WhatsApp') return i18n.language === 'hi' ? 'व्हाट्सएप' : 'WhatsApp';
+    if (val === 'Both' || val === 'Either') return i18n.language === 'hi' ? 'दोनों' : 'Both';
+    return val;
+  };
+
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -359,6 +419,51 @@ const Profile = () => {
     );
   }
 
+  const isFieldHidden = (fieldName) => {
+    return profile?.hidden_fields?.includes(fieldName);
+  };
+
+  const toggleFieldPrivacy = async (fieldName) => {
+    try {
+      const currentHidden = profile.hidden_fields || [];
+      const updatedHidden = currentHidden.includes(fieldName)
+        ? currentHidden.filter(f => f !== fieldName)
+        : [...currentHidden, fieldName];
+      
+      const { data } = await axios.put(`${API}/profile`, { hidden_fields: updatedHidden }, { withCredentials: true });
+      setProfile(data);
+      if (updateUser) updateUser(data);
+      toast.success(currentHidden.includes(fieldName) ? "Field is now visible to others!" : "Field is now hidden from others!");
+    } catch (err) {
+      toast.error("Failed to update field privacy.");
+    }
+  };
+
+  const renderPrivacyToggle = (fieldName) => {
+    if (!isOwnProfile) return null;
+    const hidden = isFieldHidden(fieldName);
+    return (
+      <button
+        type="button"
+        onClick={() => toggleFieldPrivacy(fieldName)}
+        className="ml-2 inline-flex items-center text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
+        title={hidden ? "Hidden from others (Click to show)" : "Visible to others (Click to hide)"}
+      >
+        {hidden ? (
+          <span className="flex items-center gap-1 text-red-500 font-medium">
+            <EyeOff className="w-3.5 h-3.5" />
+            <span className="text-[10px]">Hidden</span>
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 text-green-600 font-medium">
+            <Eye className="w-3.5 h-3.5" />
+            <span className="text-[10px]">Visible</span>
+          </span>
+        )}
+      </button>
+    );
+  };
+
   const isOwnProfile = user?.id === profile.id;
 
   return (
@@ -372,7 +477,7 @@ const Profile = () => {
           className="mb-6 transition-smooth"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
-          Back
+          {t('profile.back')}
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -427,7 +532,7 @@ const Profile = () => {
                       onClick={handleUnblock}
                       className="w-full h-12 rounded-full font-body text-white bg-gray-600 hover:bg-gray-700 transition-smooth"
                     >
-                      Unblock User
+                      {t('profile.unblock_user')}
                     </Button>
                   ) : (
                     <>
@@ -439,15 +544,15 @@ const Profile = () => {
                           className="w-full h-12 rounded-full font-body text-white transition-smooth bg-blue-500 hover:bg-blue-600"
                         >
                           <MessageCircle className="w-5 h-5 mr-2" />
-                          Send Message
+                          {t('profile.send_message')}
                         </Button>
                       ) : (
                         <Button
                           disabled
-                          className="w-full h-12 rounded-full font-body text-gray-400 bg-gray-100 cursor-not-allowed"
+                          className="w-full h-12 rounded-full font-body text-gray-400 bg-gray-100 cursor-not-allowed flex items-center justify-center"
                         >
                           <Lock className="w-4 h-4 mr-2" />
-                          Match Required to Chat
+                          {t('profile.chat_match_required')}
                         </Button>
                       )}
 
@@ -460,7 +565,7 @@ const Profile = () => {
                             className="flex-1 h-12 rounded-full font-body border-pink-500 text-pink-500 hover:bg-pink-50 transition-smooth"
                           >
                             <Heart className="w-4 h-4 mr-2 fill-current text-pink-500" />
-                            Liked
+                            {t('profile.liked')}
                           </Button>
                         ) : (
                           <Button
@@ -468,7 +573,7 @@ const Profile = () => {
                             className="flex-1 h-12 rounded-full font-body text-white bg-pink-500 hover:bg-pink-600 transition-smooth"
                           >
                             <Heart className="w-4 h-4 mr-2" />
-                            {profile.liked_by_them ? "Like Back" : "Like"}
+                            {profile.liked_by_them ? t('profile.like_back') : t('profile.like')}
                           </Button>
                         )}
 
@@ -506,7 +611,7 @@ const Profile = () => {
               </h1>
               <p className="font-body text-lg mb-6" style={{ color: 'var(--text-secondary)' }}>
                 {profile.date_of_birth && `${calculateAge(profile.date_of_birth)} ${t('profile.years_old')}`}
-                {profile.gender && ` • ${profile.gender}`}
+                {profile.gender && ` • ${translateGender(profile.gender)}`}
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -526,7 +631,7 @@ const Profile = () => {
                   <div className="flex items-start gap-3">
                     <Briefcase className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'var(--primary)' }} />
                     <div>
-                      <p className="font-body font-medium" style={{ color: 'var(--text-primary)' }}>Occupation</p>
+                      <p className="font-body font-medium" style={{ color: 'var(--text-primary)' }}>{t('profile.occupation')}</p>
                       <p className="font-body" style={{ color: 'var(--text-secondary)' }}>{profile.occupation}</p>
                     </div>
                   </div>
@@ -536,7 +641,7 @@ const Profile = () => {
                   <div className="flex items-start gap-3">
                     <GraduationCap className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'var(--primary)' }} />
                     <div>
-                      <p className="font-body font-medium" style={{ color: 'var(--text-primary)' }}>Education</p>
+                      <p className="font-body font-medium" style={{ color: 'var(--text-primary)' }}>{t('profile.education')}</p>
                       <p className="font-body" style={{ color: 'var(--text-secondary)' }}>{profile.education}</p>
                     </div>
                   </div>
@@ -546,7 +651,7 @@ const Profile = () => {
                   <div className="flex items-start gap-3">
                     <Phone className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'var(--primary)' }} />
                     <div>
-                      <p className="font-body font-medium" style={{ color: 'var(--text-primary)' }}>Phone</p>
+                      <p className="font-body font-medium" style={{ color: 'var(--text-primary)' }}>{t('profile.phone')}</p>
                       <p className="font-body" style={{ color: 'var(--text-secondary)' }}>{profile.phone}</p>
                     </div>
                   </div>
@@ -555,14 +660,14 @@ const Profile = () => {
                     <div className="flex items-start gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 col-span-1 md:col-span-2">
                       <Lock className="w-5 h-5 flex-shrink-0 mt-1 text-orange-500" />
                       <div>
-                        <p className="font-body font-semibold text-sm text-orange-900">Contact Details Locked</p>
-                        <p className="font-body text-xs text-orange-700 mb-2">Upgrade to Gold, Diamond, or Platinum to view contact details.</p>
+                        <p className="font-body font-semibold text-sm text-orange-900">{t('profile.contact_details_locked')}</p>
+                        <p className="font-body text-xs text-orange-700 mb-2">{t('profile.upgrade_desc')}</p>
                         <Button 
                           size="sm" 
                           onClick={() => navigate('/premium')} 
                           className="bg-orange-500 hover:bg-orange-600 text-white font-body text-[10px] sm:text-xs rounded-full h-7 px-3"
                         >
-                          Upgrade Now
+                          {t('profile.upgrade_now')}
                         </Button>
                       </div>
                     </div>
@@ -571,11 +676,124 @@ const Profile = () => {
               </div>
             </div>
 
+            {/* Parent Managed Badge Card */}
+            {profile.registration_type && profile.registration_type !== 'self' && (
+              <div
+                className="rounded-2xl p-6 md:p-8"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(184,148,31,0.05) 100%)',
+                  border: '1.5px solid rgba(212,175,55,0.3)',
+                }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
+                    style={{ background: 'linear-gradient(135deg, #D4AF37 0%, #B8941F 100%)' }}
+                  >
+                    👨‍👩‍👧
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-lg font-bold" style={{ color: '#8B6914' }}>
+                      {profile.registration_type === 'parent' ? t('profile.managed_by_parents') :
+                       profile.registration_type === 'sibling' ? t('profile.managed_by_sibling') :
+                       t('profile.managed_by_family')}
+                    </h3>
+                    <p className="font-body text-xs" style={{ color: '#A07D1C' }}>
+                      {t('profile.managed_by_desc')}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {profile.guardian_name && (
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4" style={{ color: '#B8941F' }} />
+                      <span className="font-body text-sm flex items-center" style={{ color: 'var(--text-primary)' }}>
+                        {translateRelationship(profile.relationship_to_candidate)}: <strong>{profile.guardian_name}</strong>
+                        {renderPrivacyToggle('guardian_name')}
+                      </span>
+                    </div>
+                  )}
+                  {profile.guardian_phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4" style={{ color: '#B8941F' }} />
+                      <span className="font-body text-sm flex items-center" style={{ color: 'var(--text-primary)' }}>
+                        {t('profile.phone')}: <strong>{profile.guardian_phone}</strong>
+                        {renderPrivacyToggle('guardian_phone')}
+                      </span>
+                    </div>
+                  )}
+                  {profile.guardian_whatsapp && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">💬</span>
+                      <span className="font-body text-sm flex items-center" style={{ color: 'var(--text-primary)' }}>
+                        WhatsApp: <strong>{profile.guardian_whatsapp}</strong>
+                        {renderPrivacyToggle('guardian_whatsapp')}
+                      </span>
+                    </div>
+                  )}
+                  {profile.guardian_email && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">✉️</span>
+                      <span className="font-body text-sm text-ellipsis overflow-hidden whitespace-nowrap flex items-center" style={{ color: 'var(--text-primary)' }}>
+                        Email: <strong>{profile.guardian_email}</strong>
+                        {renderPrivacyToggle('guardian_email')}
+                      </span>
+                    </div>
+                  )}
+                  {profile.preferred_contact_person && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4" style={{ color: '#B8941F' }} />
+                      <span className="font-body text-sm flex items-center" style={{ color: 'var(--text-primary)' }}>
+                        {t('profile.contact_person')}: <strong>{translateRelationship(profile.preferred_contact_person)}</strong>
+                        {renderPrivacyToggle('preferred_contact_person')}
+                      </span>
+                    </div>
+                  )}
+                  {profile.preferred_contact_mode && (
+                    <div className="flex items-center gap-2">
+                      <MessageCircle className="w-4 h-4" style={{ color: '#B8941F' }} />
+                      <span className="font-body text-sm flex items-center" style={{ color: 'var(--text-primary)' }}>
+                        {t('profile.preferred_mode')}: <strong>{translateContactMode(profile.preferred_contact_mode)}</strong>
+                        {renderPrivacyToggle('preferred_contact_mode')}
+                      </span>
+                    </div>
+                  )}
+                  {profile.preferred_contact_time && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm" style={{ color: '#B8941F' }}>🕐</span>
+                      <span className="font-body text-sm flex items-center" style={{ color: 'var(--text-primary)' }}>
+                        {t('profile.best_time')}: <strong>{profile.preferred_contact_time}</strong>
+                        {renderPrivacyToggle('preferred_contact_time')}
+                      </span>
+                    </div>
+                  )}
+                  {(!profile.guardian_phone && !isOwnProfile) && (
+                    <div className="col-span-1 sm:col-span-2 mt-2 p-3 rounded-xl bg-amber-50/50 border border-amber-200/50 flex items-start gap-2">
+                      <Lock className="w-4 h-4 mt-0.5 text-amber-600 animate-pulse" />
+                      <div>
+                        <p className="font-body font-semibold text-xs text-amber-800">{t('profile.guardian_contacts_locked')}</p>
+                        <p className="font-body text-[10px] text-amber-700">{t('profile.guardian_contacts_locked_desc')}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-body font-semibold text-white" style={{ background: '#22C55E' }}>
+                    ✅ {t('profile.mobile_verified')}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-body font-semibold text-white" style={{ background: 'linear-gradient(135deg, #D4AF37, #B8941F)' }}>
+                    👨‍👩‍👧 {t('profile.parent_verified')}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* About */}
             {profile.about && (
               <div className="bg-white rounded-2xl p-8" style={{ border: '1px solid var(--border)' }}>
-                <h2 className="font-heading text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-                  About
+                <h2 className="font-heading text-2xl font-semibold mb-4 flex items-center" style={{ color: 'var(--text-primary)' }}>
+                  {t('profile.about_heading')}
+                  {renderPrivacyToggle('about')}
                 </h2>
                 <p className="font-body leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   {profile.about}
@@ -586,24 +804,25 @@ const Profile = () => {
             {/* Personal Details */}
             <div className="bg-white rounded-2xl p-8" style={{ border: '1px solid var(--border)' }}>
               <h2 className="font-heading text-2xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
-                Personal Details
+                {t('profile.personal_details')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
-                  { label: 'Gender', value: profile.gender },
-                  { label: 'Height', value: profile.height ? `${profile.height} cm` : null },
-                  { label: 'Weight', value: profile.weight ? `${profile.weight} kg` : null },
-                  { label: 'Marital Status', value: profile.marital_status },
-                  { label: 'Religion', value: profile.religion },
-                  { label: 'Caste', value: profile.caste },
-                  { label: 'Mother Tongue', value: profile.mother_tongue },
-                  { label: 'Annual Income', value: profile.income },
+                  { label: t('profile.gender'), value: translateGender(profile.gender), field: 'gender' },
+                  { label: t('profile.height'), value: profile.height ? `${profile.height} cm` : null, field: 'height' },
+                  { label: t('profile.weight'), value: profile.weight ? `${profile.weight} kg` : null, field: 'weight' },
+                  { label: t('profile.marital_status'), value: translateMaritalStatus(profile.marital_status), field: 'marital_status' },
+                  { label: t('profile.religion'), value: translateReligion(profile.religion), field: 'religion' },
+                  { label: t('profile.caste'), value: profile.caste, field: 'caste' },
+                  { label: t('profile.mother_tongue'), value: profile.mother_tongue, field: 'mother_tongue' },
+                  { label: t('profile.annual_income'), value: translateIncome(profile.income), field: 'income' },
                 ].map(
                   (item, i) =>
                     item.value && (
                       <div key={i}>
-                        <p className="font-body font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+                        <p className="font-body font-medium mb-1 flex items-center" style={{ color: 'var(--text-primary)' }}>
                           {item.label}
+                          {renderPrivacyToggle(item.field)}
                         </p>
                         <p className="font-body" style={{ color: 'var(--text-secondary)' }}>
                           {item.value}
@@ -617,20 +836,21 @@ const Profile = () => {
             {/* Family Details */}
             <div className="bg-white rounded-2xl p-8" style={{ border: '1px solid var(--border)' }}>
               <h2 className="font-heading text-2xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
-                Family Details
+                {t('profile.family_details')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
-                  { label: 'Family Type', value: profile.family_type },
-                  { label: 'Father\'s Occupation', value: profile.father_occupation },
-                  { label: 'Mother\'s Occupation', value: profile.mother_occupation },
-                  { label: 'Siblings', value: profile.siblings },
+                  { label: t('profile.family_type'), value: translateFamilyType(profile.family_type), field: 'family_type' },
+                  { label: t('profile.father_occ'), value: profile.father_occupation, field: 'father_occupation' },
+                  { label: t('profile.mother_occ'), value: profile.mother_occupation, field: 'mother_occupation' },
+                  { label: t('profile.siblings'), value: profile.siblings, field: 'siblings' },
                 ].map(
                   (item, i) =>
                     item.value && (
                       <div key={i}>
-                        <p className="font-body font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+                        <p className="font-body font-medium mb-1 flex items-center" style={{ color: 'var(--text-primary)' }}>
                           {item.label}
+                          {renderPrivacyToggle(item.field)}
                         </p>
                         <p className="font-body" style={{ color: 'var(--text-secondary)' }}>
                           {item.value}

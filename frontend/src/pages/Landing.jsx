@@ -267,7 +267,7 @@ const Landing = () => {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
               <Button
                 data-testid="hero-register-button"
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/register-choice')}
                 className="h-12 sm:h-14 px-6 sm:px-8 rounded-full font-body font-medium text-white text-base sm:text-lg transition-smooth shadow-lg w-full sm:w-auto hover:scale-105"
                 style={{ background: 'var(--primary)' }}
                 onMouseEnter={(e) => (e.target.style.background = 'var(--primary-hover)')}
@@ -535,6 +535,17 @@ const Landing = () => {
                         >
                           <Crown className="w-3 h-3" />
                           <span className="text-xs font-body font-medium hidden sm:inline">{t('landing.premium')}</span>
+                        </div>
+                      )}
+                      {profile.registration_type && profile.registration_type !== 'self' && user && (
+                        <div
+                          className="absolute top-2 left-2 px-2 py-1 rounded-full flex items-center gap-1 shadow-md"
+                          style={{
+                            background: 'linear-gradient(135deg, #D4AF37 0%, #B8941F 100%)',
+                            color: 'white',
+                          }}
+                        >
+                          <span className="text-[10px] font-body font-semibold">👨‍👩‍👧 Parent</span>
                         </div>
                       )}
                       <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 hero-overlay">

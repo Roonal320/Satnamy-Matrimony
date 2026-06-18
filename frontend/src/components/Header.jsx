@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   return (
@@ -151,6 +151,44 @@ const Header = () => {
                 </Button>
               </>
             )}
+            {/* Professional Segmented Language Toggle */}
+            <div
+              className="inline-flex items-center rounded-full p-0.5 border select-none ml-1 sm:ml-2"
+              style={{
+                backgroundColor: '#F8F6F4',
+                borderColor: '#EAE6E1',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.03)'
+              }}
+            >
+              <button
+                onClick={() => {
+                  i18n.changeLanguage('en');
+                  localStorage.setItem('lng', 'en');
+                }}
+                className="px-2.5 py-1 rounded-full text-[10px] font-body font-semibold transition-all duration-200"
+                style={{
+                  backgroundColor: i18n.language !== 'hi' ? 'var(--primary)' : 'transparent',
+                  color: i18n.language !== 'hi' ? 'white' : '#706860',
+                  boxShadow: i18n.language !== 'hi' ? '0 2px 4px rgba(0,0,0,0.08)' : 'none'
+                }}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => {
+                  i18n.changeLanguage('hi');
+                  localStorage.setItem('lng', 'hi');
+                }}
+                className="px-2.5 py-1 rounded-full text-[10px] font-body font-semibold transition-all duration-200"
+                style={{
+                  backgroundColor: i18n.language === 'hi' ? 'var(--primary)' : 'transparent',
+                  color: i18n.language === 'hi' ? 'white' : '#706860',
+                  boxShadow: i18n.language === 'hi' ? '0 2px 4px rgba(0,0,0,0.08)' : 'none'
+                }}
+              >
+                हिं
+              </button>
+            </div>
           </div>
 
           {/* Mobile Navigation Toggle & Premium Badge */}
@@ -290,6 +328,48 @@ const Header = () => {
                 </Button>
               </>
             )}
+            {/* Mobile Language Segmented Toggle */}
+            <div className="flex items-center justify-between w-full py-2.5 px-3 rounded-lg border bg-neutral-50/50 mt-2" style={{ borderColor: 'var(--border)' }}>
+              <span className="text-sm font-body font-medium flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <span>🌐</span> {i18n.language === 'hi' ? 'भाषा' : 'Language'}
+              </span>
+              <div
+                className="inline-flex items-center rounded-full p-0.5 border"
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderColor: 'var(--border)'
+                }}
+              >
+                <button
+                  onClick={() => {
+                    i18n.changeLanguage('en');
+                    localStorage.setItem('lng', 'en');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="px-3 py-1 rounded-full text-xs font-body font-semibold transition-all duration-200"
+                  style={{
+                    backgroundColor: i18n.language !== 'hi' ? 'var(--primary)' : 'transparent',
+                    color: i18n.language !== 'hi' ? 'white' : '#706860',
+                  }}
+                >
+                  English
+                </button>
+                <button
+                  onClick={() => {
+                    i18n.changeLanguage('hi');
+                    localStorage.setItem('lng', 'hi');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="px-3 py-1 rounded-full text-xs font-body font-semibold transition-all duration-200"
+                  style={{
+                    backgroundColor: i18n.language === 'hi' ? 'var(--primary)' : 'transparent',
+                    color: i18n.language === 'hi' ? 'white' : '#706860',
+                  }}
+                >
+                  हिंदी
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

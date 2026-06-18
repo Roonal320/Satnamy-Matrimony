@@ -129,6 +129,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Register a profile managed by a parent/guardian.
+   * No OTP verification required.
+   */
+  const parentRegister = async (formData) => {
+    try {
+      const { data } = await axios.post(`${API}/auth/parent-register`, formData, {
+        withCredentials: true,
+      });
+      setUser(data);
+      return { success: true };
+    } catch (e) {
+      return {
+        success: false,
+        error: formatApiErrorDetail(e.response?.data?.detail) || e.message,
+      };
+    }
+  };
+
   const logout = async () => {
     try {
       await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
@@ -143,7 +162,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, googleRegister, logout, updateUser, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, googleRegister, parentRegister, logout, updateUser, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

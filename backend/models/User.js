@@ -146,6 +146,71 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: "user"
   },
+
+  // ── Registration Type ──
+  registration_type: {
+    type: String,
+    enum: ['self', 'parent', 'sibling', 'relative'],
+    default: 'self'
+  },
+  hidden_fields: {
+    type: [String],
+    default: []
+  },
+  relationship_to_candidate: {
+    type: String,
+    default: null
+  },
+
+  // ── Parent/Guardian Contact Info ──
+  guardian_name: { type: String, default: null },
+  guardian_phone: { type: String, default: null },
+  guardian_whatsapp: { type: String, default: null },
+  guardian_email: { type: String, default: null },
+  guardian_city: { type: String, default: null },
+  guardian_state: { type: String, default: null },
+  guardian_photo: { type: String, default: null },
+
+  // ── Additional Candidate Details ──
+  manglik: { type: String, default: null },
+  highest_degree: { type: String, default: null },
+  college_name: { type: String, default: null },
+  company_name: { type: String, default: null },
+  native_place: { type: String, default: null },
+
+  // ── Enhanced Family Details ──
+  father_name: { type: String, default: null },
+  mother_name: { type: String, default: null },
+  num_brothers: { type: String, default: null },
+  num_sisters: { type: String, default: null },
+  family_values: { type: String, default: null },
+
+  // ── Religion & Community (enhanced) ──
+  guru_ghar: { type: String, default: null },
+  gotra: { type: String, default: null },
+
+  // ── Lifestyle ──
+  diet: { type: String, default: null },
+  smoking: { type: String, default: null },
+  drinking: { type: String, default: null },
+
+  // ── Partner Preferences ──
+  partner_age_min: { type: Number, default: null },
+  partner_age_max: { type: Number, default: null },
+  partner_height_min: { type: String, default: null },
+  partner_height_max: { type: String, default: null },
+  partner_education: { type: String, default: null },
+  partner_occupation: { type: String, default: null },
+  partner_state: { type: String, default: null },
+  partner_city: { type: String, default: null },
+  partner_marital_status: { type: String, default: null },
+  partner_manglik: { type: String, default: null },
+
+  // ── Communication Preferences ──
+  preferred_contact_person: { type: String, default: null },
+  preferred_contact_time: { type: String, default: null },
+  preferred_contact_mode: { type: String, default: null },
+
   resetPasswordToken: {
     type: String,
     default: null

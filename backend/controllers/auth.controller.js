@@ -402,6 +402,141 @@ async function googleRegister(req, res) {
 }
 
 /**
+ * Registers a new profile managed by a parent/guardian.
+ * No OTP verification required for parent registrations.
+ */
+async function parentRegister(req, res) {
+  try {
+    const {
+      // Registration info
+      registration_type,
+      relationship_to_candidate,
+      // Guardian/parent contact
+      guardian_name,
+      guardian_phone,
+      guardian_whatsapp,
+      guardian_email,
+      guardian_city,
+      guardian_state,
+      // Account credentials (parent's email + password)
+      email,
+      password,
+      // Candidate details
+      name,
+      gender,
+      date_of_birth,
+      phone,
+    } = req.body;
+
+    // Validate required fields
+    if (!registration_type || !relationship_to_candidate || !guardian_name || !guardian_phone) {
+      return res.status(422).json({ detail: "Parent/guardian details are required" });
+    }
+    if (!email || !password) {
+      return res.status(422).json({ detail: "Email and password are required for the account" });
+    }
+    if (!name || !gender || !date_of_birth) {
+      return res.status(422).json({ detail: "Candidate name, gender, and date of birth are required" });
+    }
+
+    // Age restriction: candidate must be at least 18
+    const dobDate = new Date(date_of_birth);
+    const eighteenYearsAgo = new Date();
+    eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+    if (dobDate > eighteenYearsAgo) {
+      return res.status(400).json({ detail: "Candidate must be at least 18 years old" });
+    }
+
+    // Password validation
+    if (password.length < 8) {
+      return res.status(400).json({ detail: "Password must be at least 8 characters" });
+    }
+
+    const emailLower = email.toLowerCase();
+    const existing = await User.findOne({ email: emailLower });
+    if (existing) {
+      return res.status(400).json({ detail: "Email already registered" });
+    }
+
+    const userId = uuid.v4();
+    const passwordHash = await cryptoUtils.hashPassword(password);
+
+    // Calculate free Gold promo (active until Dec 31, 2026)
+    const now = new Date();
+    const isPromoActive = now < new Date('2027-01-01T00:00:00Z');
+    let isPremium = false;
+    let premiumPlan = null;
+    let premiumName = null;
+    let premiumUntil = null;
+    let premiumFeatures = [];
+
+    if (isPromoActive) {
+      const gold6Months = new Date();
+      gold6Months.setMonth(gold6Months.getMonth() + 6);
+      isPremium = true;
+      premiumPlan = 'gold_6';
+      premiumName = 'Gold';
+      premiumUntil = gold6Months.toISOString();
+      premiumFeatures = ["unlimited_messaging", "view_contacts", "profile_boost"];
+    }
+
+    const newUser = await User.create({
+      id: userId,
+      email: emailLower,
+      password_hash: passwordHash,
+      auth_provider: 'local',
+      name,
+      phone: phone || guardian_phone,
+      gender,
+      date_of_birth,
+      profile_photo: null,
+      is_premium: isPremium,
+      premium_plan: premiumPlan,
+      premium_name: premiumName,
+      premium_until: premiumUntil,
+      premium_features: premiumFeatures,
+      profile_completed: false,
+      created_at: new Date().toISOString(),
+      religion: "Satnami",
+      country: "India",
+      // Registration type fields
+      registration_type,
+      relationship_to_candidate,
+      // Guardian contact info
+      guardian_name,
+      guardian_phone,
+      guardian_whatsapp: guardian_whatsapp || null,
+      guardian_email: guardian_email || null,
+      guardian_city: guardian_city || null,
+      guardian_state: guardian_state || null,
+      // Communication defaults for parent-managed profiles
+      preferred_contact_person: relationship_to_candidate,
+      preferred_contact_mode: 'Both',
+    });
+
+    const accessToken = authService.generateAccessToken(userId, emailLower);
+    const refreshToken = authService.generateRefreshToken(userId);
+    authService.setAuthCookies(res, accessToken, refreshToken);
+
+    const userResponse = newUser.toObject();
+    delete userResponse.password_hash;
+    delete userResponse._id;
+
+    const isUserPremium = userResponse.is_premium && userResponse.premium_until && new Date(userResponse.premium_until) > new Date();
+    userResponse.is_premium = isUserPremium;
+    userResponse.premium_plan = isUserPremium ? userResponse.premium_plan : null;
+    userResponse.premium_name = isUserPremium ? userResponse.premium_name : null;
+    userResponse.premium_until = isUserPremium ? userResponse.premium_until : null;
+    userResponse.premium_features = isUserPremium ? userResponse.premium_features : [];
+
+    return res.status(200).json(userResponse);
+  } catch (err) {
+    console.error('Parent register error:', err);
+    return res.status(500).json({ detail: "Internal server error" });
+  }
+}
+
+/**
  * Logs out user by clearing cookies.
  */
 function logout(req, res) {
@@ -589,6 +724,7 @@ module.exports = {
   login,
   googleAuth,
   googleRegister,
+  parentRegister,
   logout,
   getMe,
   sendOtp,

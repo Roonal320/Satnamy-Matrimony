@@ -21,7 +21,21 @@ async function updateProfile(req, res) {
       'height', 'weight', 'marital_status', 'religion', 'caste',
       'mother_tongue', 'education', 'occupation', 'income',
       'city', 'state', 'country', 'about', 'family_type',
-      'father_occupation', 'mother_occupation', 'siblings'
+      'father_occupation', 'mother_occupation', 'siblings',
+      // Enhanced fields
+      'manglik', 'highest_degree', 'college_name', 'company_name', 'native_place',
+      'father_name', 'mother_name', 'num_brothers', 'num_sisters', 'family_values',
+      'guru_ghar', 'gotra',
+      'diet', 'smoking', 'drinking',
+      // Partner preferences
+      'partner_age_min', 'partner_age_max', 'partner_height_min', 'partner_height_max',
+      'partner_education', 'partner_occupation', 'partner_state', 'partner_city',
+      'partner_marital_status', 'partner_manglik',
+      // Communication preferences
+      'preferred_contact_person', 'preferred_contact_time', 'preferred_contact_mode',
+      // Guardian info (allow updates)
+      'guardian_name', 'guardian_phone', 'guardian_whatsapp', 'guardian_email',
+      'guardian_city', 'guardian_state', 'hidden_fields'
     ];
 
     for (const field of allowedFields) {
@@ -194,7 +208,15 @@ async function getProfiles(req, res) {
       }
     }
 
-    const profiles = await User.find(query, { password_hash: 0, _id: 0, email: 0, phone: 0 });
+    const profiles = await User.find(query, {
+      password_hash: 0,
+      _id: 0,
+      email: 0,
+      phone: 0,
+      guardian_phone: 0,
+      guardian_whatsapp: 0,
+      guardian_email: 0
+    });
     const profilesList = profiles.map(p => {
       const pObj = p.toObject();
       const isPremium = pObj.is_premium && pObj.premium_until && new Date(pObj.premium_until) > new Date();
@@ -282,7 +304,15 @@ async function advancedSearch(req, res) {
       ];
     }
 
-    const profiles = await User.find(query, { password_hash: 0, _id: 0, email: 0, phone: 0 })
+    const profiles = await User.find(query, {
+      password_hash: 0,
+      _id: 0,
+      email: 0,
+      phone: 0,
+      guardian_phone: 0,
+      guardian_whatsapp: 0,
+      guardian_email: 0
+    })
       .skip(skip)
       .limit(limit);
 
@@ -363,10 +393,29 @@ async function getProfileById(req, res) {
       );
     }
 
-    // Shield email/phone for non-premium viewers
+    // Shield email/phone and guardian contact details for non-premium viewers
+    const isBothParentsAndMatched = 
+      currentUser.registration_type && currentUser.registration_type !== 'self' && 
+      profileObj.registration_type && profileObj.registration_type !== 'self' && 
+      profileObj.is_mutual_match;
+
     if (!currentUser.is_premium && currentUser.id !== userId) {
       profileObj.email = null;
       profileObj.phone = null;
+      if (!isBothParentsAndMatched) {
+        profileObj.guardian_phone = null;
+        profileObj.guardian_whatsapp = null;
+        profileObj.guardian_email = null;
+      }
+    }
+
+    // Hide user-toggled hidden fields from other users
+    if (currentUser.id !== userId && profileObj.hidden_fields && Array.isArray(profileObj.hidden_fields)) {
+      for (const field of profileObj.hidden_fields) {
+        if (field in profileObj) {
+          profileObj[field] = null;
+        }
+      }
     }
 
     return res.status(200).json(profileObj);
