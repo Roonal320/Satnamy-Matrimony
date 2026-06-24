@@ -4,18 +4,18 @@ const Message = require('../models/Message');
 const Match = require('../models/Match');
 const profileService = require('../services/profile.service');
 const authService = require('../services/auth.service');
-const path = require('path');
-const fs = require('fs');
 const { getS3Url, getS3KeyFromUrl, deleteFromS3 } = require('../config/s3');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
-const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 
 /**
  * Update current user profile fields.
  */
 async function updateProfile(req, res) {
   try {
+    const currentUser = await User.findOne({ id: req.user.id });
+    if (!currentUser) {
+      return res.status(404).json({ detail: "User not found" });
+    }
+
     const updateData = {};
     const allowedFields = [
       'height', 'weight', 'marital_status', 'religion', 'caste',
@@ -35,7 +35,8 @@ async function updateProfile(req, res) {
       'preferred_contact_person', 'preferred_contact_time', 'preferred_contact_mode',
       // Guardian info (allow updates)
       'guardian_name', 'guardian_phone', 'guardian_whatsapp', 'guardian_email',
-      'guardian_city', 'guardian_state', 'hidden_fields'
+      'guardian_city', 'guardian_state', 'hidden_fields',
+      'gender', 'date_of_birth'
     ];
 
     for (const field of allowedFields) {
@@ -44,8 +45,28 @@ async function updateProfile(req, res) {
       }
     }
 
+    // Merge updates with current user to check completeness
+    const mergedUser = {
+      gender: updateData.gender !== undefined ? updateData.gender : currentUser.gender,
+      occupation: updateData.occupation !== undefined ? updateData.occupation : currentUser.occupation,
+      city: updateData.city !== undefined ? updateData.city : currentUser.city,
+      state: updateData.state !== undefined ? updateData.state : currentUser.state,
+      education: updateData.education !== undefined ? updateData.education : currentUser.education,
+      profile_photo: currentUser.profile_photo
+    };
+
+    const isComplete = !!(
+      mergedUser.gender &&
+      mergedUser.occupation &&
+      mergedUser.city &&
+      mergedUser.state &&
+      mergedUser.education &&
+      mergedUser.profile_photo
+    );
+
+    updateData.profile_completed = isComplete;
+
     if (Object.keys(updateData).length > 0) {
-      updateData.profile_completed = true;
       await User.updateOne({ id: req.user.id }, { $set: updateData });
     }
 
@@ -91,7 +112,26 @@ async function uploadPhoto(req, res) {
     // multer-s3 sets req.file.location to the full public S3 URL
     const photoUrl = req.file.location || getS3Url(req.file.key);
 
-    await User.updateOne({ id: req.user.id }, { $set: { profile_photo: photoUrl } });
+    // Check completeness with the newly uploaded photo
+    const isComplete = !!(
+      currentUser &&
+      currentUser.gender &&
+      currentUser.occupation &&
+      currentUser.city &&
+      currentUser.state &&
+      currentUser.education &&
+      photoUrl
+    );
+
+    await User.updateOne(
+      { id: req.user.id },
+      { 
+        $set: { 
+          profile_photo: photoUrl,
+          profile_completed: isComplete 
+        } 
+      }
+    );
 
     return res.status(200).json({
       url: photoUrl,
@@ -104,64 +144,7 @@ async function uploadPhoto(req, res) {
   }
 }
 
-/**
- * Securely serve uploaded files (local disk — kept for backward compatibility).
- * New uploads go directly to S3 and are served via public S3 URLs.
- */
-async function getFile(req, res) {
-  const filePath = req.params[0];
-  let token = req.cookies.access_token;
-  if (!token && req.query.auth) {
-    token = req.query.auth;
-  }
-  if (!token && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-    token = req.headers.authorization.slice(7);
-  }
 
-  if (!token) {
-    return res.status(401).json({ detail: "Not authenticated" });
-  }
-
-  try {
-    const decoded = authService.verifyToken(token);
-    if (decoded.type !== 'access') {
-      return res.status(401).json({ detail: "Invalid token" });
-    }
-  } catch (err) {
-    return res.status(401).json({ detail: "Invalid token" });
-  }
-
-  try {
-    const fullPath = path.join(UPLOAD_DIR, filePath);
-    const resolvedPath = path.resolve(fullPath);
-    const resolvedUploadsDir = path.resolve(UPLOAD_DIR);
-
-    // Directory traversal guard
-    if (!resolvedPath.startsWith(resolvedUploadsDir)) {
-      return res.status(403).json({ detail: "Access denied" });
-    }
-
-    if (!fs.existsSync(resolvedPath)) {
-      return res.status(404).json({ detail: "File not found" });
-    }
-
-    const ext = path.extname(resolvedPath).toLowerCase();
-    const contentTypes = {
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".png": "image/png",
-      ".webp": "image/webp",
-      ".gif": "image/gif"
-    };
-    const contentType = contentTypes[ext] || "application/octet-stream";
-
-    res.setHeader('Content-Type', contentType);
-    fs.createReadStream(resolvedPath).pipe(res);
-  } catch (err) {
-    console.error(`File fetch error: ${err.message}`);
-    return res.status(404).json({ detail: "File not found" });
-  }
-}
 
 /**
  * List opposite-gender matching profiles (or all if public request).
@@ -172,7 +155,7 @@ async function getProfiles(req, res) {
     const limit = parseInt(req.query.limit) || 20;
 
     let userObj = null;
-    let query = { profile_completed: true };
+    let query = {};
     let blockedUserIds = [];
 
     let token = req.cookies.access_token;
@@ -246,13 +229,13 @@ async function getProfiles(req, res) {
 /**
  * Advanced profiles search endpoint.
  */
+
 async function advancedSearch(req, res) {
   try {
     const skip = parseInt(req.query.skip) || 0;
     const limit = parseInt(req.query.limit) || 20;
     const filters = req.body || {};
-
-    const query = { profile_completed: true };
+    const query = {};
     let blockedUserIds = [];
 
     let token = req.cookies.access_token;
@@ -514,7 +497,6 @@ async function deleteProfile(req, res) {
 module.exports = {
   updateProfile,
   uploadPhoto,
-  getFile,
   getProfiles,
   advancedSearch,
   getProfileById,

@@ -80,7 +80,7 @@ app.set('isUserOnline', isUserOnline);
 
 // ── Socket.io connection events ──
 io.on('connection', (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
+  if (process.env.NODE_ENV !== 'production') console.log(`Socket connected: ${socket.id}`);
   let currentUserId = null;
 
   // Join user room + broadcast presence
@@ -89,7 +89,7 @@ io.on('connection', (socket) => {
     currentUserId = userId;
     socket.join(userId);
     setUserOnline(userId, socket.id);
-    console.log(`Socket ${socket.id} joined user room ${userId}`);
+    if (process.env.NODE_ENV !== 'production') console.log(`Socket ${socket.id} joined user room ${userId}`);
 
     // Broadcast online status to all connected sockets
     socket.broadcast.emit('user_online', { userId });
@@ -156,7 +156,7 @@ io.on('connection', (socket) => {
 
   // ── Disconnect ──
   socket.on('disconnect', () => {
-    console.log(`Socket disconnected: ${socket.id}`);
+    if (process.env.NODE_ENV !== 'production') console.log(`Socket disconnected: ${socket.id}`);
     if (currentUserId) {
       const fullyOffline = setUserOffline(currentUserId, socket.id);
       if (fullyOffline) {

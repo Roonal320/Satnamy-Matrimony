@@ -26,12 +26,9 @@ if (hasConfig && typeof window !== 'undefined') {
     }
     // Analytics only runs in browser environments
     analytics = getAnalytics(app);
-    console.log("Firebase Analytics initialized successfully!");
   } catch (error) {
-    console.warn("Failed to initialize Firebase Analytics:", error.message);
+    // Firebase Analytics init failed — non-critical
   }
-} else {
-  console.warn("Firebase config variables are missing. Firebase Analytics will run in fallback/mock mode.");
 }
 
 /**
@@ -41,12 +38,9 @@ export const logAnalyticsEvent = (eventName, eventParams = {}) => {
   if (analytics) {
     try {
       fbLogEvent(analytics, eventName, eventParams);
-      console.log(`[Firebase Analytics] Event: ${eventName}`, eventParams);
     } catch (e) {
-      console.warn("Error logging event to Firebase:", e);
+      // Analytics event logging failed — non-critical
     }
-  } else {
-    console.log(`[Firebase Analytics Fallback] Event: ${eventName}`, eventParams);
   }
 };
 

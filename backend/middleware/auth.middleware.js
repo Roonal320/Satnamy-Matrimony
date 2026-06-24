@@ -42,6 +42,17 @@ async function authenticate(req, res, next) {
     userObj.premium_until = isPremium ? user.premium_until : null;
     userObj.premium_features = isPremium ? user.premium_features : [];
 
+    // Dynamically evaluate completeness if all key details are present
+    const isComplete = !!(
+      userObj.gender &&
+      userObj.occupation &&
+      userObj.city &&
+      userObj.state &&
+      userObj.education &&
+      userObj.profile_photo
+    );
+    userObj.profile_completed = userObj.profile_completed || isComplete;
+
     req.user = userObj;
     next();
   } catch (err) {

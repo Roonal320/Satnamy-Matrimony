@@ -33,20 +33,23 @@ function verifyToken(token) {
 
 /**
  * Sets authorization cookies on HTTP response.
+ * In production (HTTPS), cookies are secure with sameSite=none for cross-domain support.
  */
 function setAuthCookies(res, accessToken, refreshToken) {
+  const isProduction = process.env.NODE_ENV === 'production';
+
   res.cookie('access_token', accessToken, {
     httpOnly: true,
-    secure: false, // matches server.py secure=False
-    sameSite: 'lax',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: 86400 * 1000, // 24 hours in ms
     path: '/'
   });
 
   res.cookie('refresh_token', refreshToken, {
     httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: 604800 * 1000, // 7 days in ms
     path: '/'
   });

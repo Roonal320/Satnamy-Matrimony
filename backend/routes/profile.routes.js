@@ -70,9 +70,6 @@ router.post('/profile/photo', (req, res, next) => {
   });
 }, profileController.uploadPhoto);
 
-// Note: /files/* route is no longer needed (S3 serves files directly),
-// but kept for backward compatibility with any existing local file references.
-router.get('/files/*', profileController.getFile);
 
 router.get('/profiles', profileController.getProfiles);
 router.post('/profiles/search', profileController.advancedSearch);

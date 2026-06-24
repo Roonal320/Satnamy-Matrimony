@@ -21,7 +21,11 @@ const Landing = () => {
   const { t } = useTranslation();
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [filters, setFilters] = useState({});
+  const [profileSkip, setProfileSkip] = useState(0);
+  const [hasMoreProfiles, setHasMoreProfiles] = useState(true);
+  const PROFILES_LIMIT = 20;
 
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabParam === 'viewers' ? 'viewers' : 'discover');
@@ -62,26 +66,45 @@ const Landing = () => {
     }
   };
 
-  const fetchProfiles = async () => {
+  const fetchProfiles = async (reset = true) => {
     try {
-      const { data } = await axios.get(`${API}/profiles`, { withCredentials: true });
-      setProfiles(data);
+      const skip = reset ? 0 : profileSkip;
+      if (!reset) setLoadingMore(true);
+      const { data } = await axios.get(`${API}/profiles?skip=${skip}&limit=${PROFILES_LIMIT}`, { withCredentials: true });
+      if (reset) {
+        setProfiles(data);
+        setProfileSkip(data.length);
+      } else {
+        setProfiles(prev => [...prev, ...data]);
+        setProfileSkip(prev => prev + data.length);
+      }
+      setHasMoreProfiles(data.length >= PROFILES_LIMIT);
     } catch (error) {
       console.error('Failed to fetch profiles:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
-  const applyFilters = async () => {
+  const applyFilters = async (reset = true) => {
     try {
-      setLoading(true);
-      const { data } = await axios.post(`${API}/profiles/search`, filters, { withCredentials: true });
-      setProfiles(data);
+      const skip = reset ? 0 : profileSkip;
+      if (reset) setLoading(true); else setLoadingMore(true);
+      const { data } = await axios.post(`${API}/profiles/search?skip=${skip}&limit=${PROFILES_LIMIT}`, filters, { withCredentials: true });
+      if (reset) {
+        setProfiles(data);
+        setProfileSkip(data.length);
+      } else {
+        setProfiles(prev => [...prev, ...data]);
+        setProfileSkip(prev => prev + data.length);
+      }
+      setHasMoreProfiles(data.length >= PROFILES_LIMIT);
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -624,6 +647,37 @@ const Landing = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Load More Button */}
+            {!loading && profiles.length > 0 && hasMoreProfiles && (
+              <div className="flex justify-center mt-8 sm:mt-10 mb-4">
+                <Button
+                  data-testid="load-more-button"
+                  onClick={() => {
+                    const hasActiveFilters = Object.keys(filters).some(k => filters[k]);
+                    if (hasActiveFilters) {
+                      applyFilters(false);
+                    } else {
+                      fetchProfiles(false);
+                    }
+                  }}
+                  disabled={loadingMore}
+                  className="h-12 px-8 sm:px-10 rounded-full font-body font-semibold text-white text-sm sm:text-base transition-smooth shadow-lg hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  style={{ background: 'var(--primary)' }}
+                  onMouseEnter={(e) => { if (!loadingMore) e.target.style.background = 'var(--primary-hover)'; }}
+                  onMouseLeave={(e) => { e.target.style.background = 'var(--primary)'; }}
+                >
+                  {loadingMore ? (
+                    <span className="flex items-center gap-2">
+                      <span className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></span>
+                      Loading...
+                    </span>
+                  ) : (
+                    'Load More Profiles'
+                  )}
+                </Button>
               </div>
             )}
           </>
