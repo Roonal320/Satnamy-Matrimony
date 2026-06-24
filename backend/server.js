@@ -18,6 +18,9 @@ const PORT = process.env.PORT || 8000;
 // Set up express app
 const app = express();
 
+// Trust proxy (required for express-rate-limit behind reverse proxies like Nginx/Cloudflare)
+app.set('trust proxy', 1);
+
 // Parse cookies and request bodies
 app.use(cookieParser());
 app.use(express.json());
